@@ -1,10 +1,13 @@
+import SwiftData
 import SwiftUI
 
 /// A single room's photos and flagged issues. Not in the mockups; bridges the report list to the issue screen.
 struct RoomDetailView: View {
-    var room: Room
+    @Bindable var room: Room
 
+    @Environment(\.modelContext) private var context
     @State private var isCapturing = false
+    @State private var viewingPhoto: Photo?
 
     private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
 
@@ -17,7 +20,7 @@ struct RoomDetailView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         SectionLabel("Flagged issues")
                         DividedStack {
-                            ForEach(room.issues) { issue in
+                            ForEach(room.sortedIssues) { issue in
                                 NavigationLink(value: issue) {
                                     IssueRow(issue: issue)
                                 }
@@ -30,7 +33,7 @@ struct RoomDetailView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     SectionLabel("Photos")
-                    if room.photoCount == 0 {
+                    if room.photos.isEmpty {
                         Text("No photos yet. Walk the room and photograph each wall, the floor and the ceiling.")
                             .font(.rowSubtitle)
                             .foregroundStyle(Theme.textSecondary)
@@ -38,10 +41,32 @@ struct RoomDetailView: View {
                             .card(padding: 20)
                     } else {
                         LazyVGrid(columns: columns, spacing: 8) {
-                            ForEach(0..<room.photoCount, id: \.self) { index in
-                                PhotoSwatch(seed: index)
-                                    .aspectRatio(1, contentMode: .fit)
-                                    .clipShape(.rect(cornerRadius: 10))
+                            ForEach(Array(room.sortedPhotos.enumerated()), id: \.element.id) { index, photo in
+                                Button {
+                                    viewingPhoto = photo
+                                } label: {
+                                    Color.clear
+                                        .aspectRatio(1, contentMode: .fit)
+                                        .overlay { PhotoThumbnail(fileName: photo.fileName, seed: index) }
+                                        .clipShape(.rect(cornerRadius: 10))
+                                        .overlay(alignment: .topTrailing) {
+                                            if photo.issue != nil {
+                                                Image(systemName: "exclamationmark.circle.fill")
+                                                    .font(.system(size: 18))
+                                                    .foregroundStyle(.white, Theme.danger)
+                                                    .padding(6)
+                                            }
+                                        }
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    if photo.issue == nil {
+                                        Button("Flag as issue", systemImage: "exclamationmark.circle") { flagIssue(for: photo) }
+                                    }
+                                    Button("Delete photo", systemImage: "trash", role: .destructive) {
+                                        PhotoStore.delete(photo, in: context)
+                                    }
+                                }
                             }
                         }
                     }
@@ -55,12 +80,18 @@ struct RoomDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) { EmptyView() }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(room.isComplete ? "Reopen" : "Mark done") {
+                    withAnimation { room.isComplete.toggle() }
+                }
+                .disabled(!room.isComplete && room.photos.isEmpty)
+            }
         }
         .safeAreaInset(edge: .bottom) {
             Button {
                 isCapturing = true
             } label: {
-                Label(room.photoCount == 0 ? "Start \(room.name)" : "Add photos", systemImage: "camera")
+                Label(room.photos.isEmpty ? "Start \(room.name)" : "Add photos", systemImage: "camera")
             }
             .buttonStyle(.primary)
             .padding(.horizontal, 20)
@@ -68,16 +99,24 @@ struct RoomDetailView: View {
             .background(Theme.background)
         }
         .fullScreenCover(isPresented: $isCapturing) {
-            CaptureView(roomName: room.name)
+            CaptureView(room: room)
+        }
+        .sheet(item: $viewingPhoto) { photo in
+            PhotoViewer(photo: photo)
         }
     }
 
     private var subtitle: String {
-        switch room.status {
-        case .done: "\(room.photoCount) photos · \(room.issues.count) issues"
-        case .upNext: "Up next"
-        case .notStarted: "Not started"
-        }
+        if room.photos.isEmpty { return "Not started" }
+        let summary = "\(room.photos.count.counted("photo")) · \(room.issues.count.counted("issue"))"
+        return room.isComplete ? summary : "In progress · \(summary)"
+    }
+
+    private func flagIssue(for photo: Photo) {
+        let issue = Issue(title: "Issue on \(photo.location.lowercased())", suggestion: "damage", createdAt: photo.capturedAt)
+        context.insert(issue)
+        issue.room = room
+        photo.issue = issue
     }
 }
 
@@ -86,14 +125,15 @@ private struct IssueRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            BenchtopPhoto()
+            Color.clear
                 .frame(width: 52, height: 52)
+                .overlay { PhotoThumbnail(fileName: issue.sortedPhotos.first?.fileName) }
                 .clipShape(.rect(cornerRadius: 10))
             VStack(alignment: .leading, spacing: 2) {
                 Text(issue.title)
                     .font(.rowTitle)
                     .foregroundStyle(Theme.textPrimary)
-                Text("\(issue.severity.rawValue) · \(issue.photoCount) photos")
+                Text("\(issue.severity.rawValue) · \(issue.photos.count.counted("photo"))")
                     .font(.rowSubtitle)
                     .foregroundStyle(Theme.textSecondary)
             }
@@ -108,6 +148,32 @@ private struct IssueRow: View {
     }
 }
 
+private struct PhotoViewer: View {
+    var photo: Photo
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            PhotoThumbnail(fileName: photo.fileName)
+                .scaledToFit()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.black)
+                .navigationTitle(photo.location)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                    ToolbarItem(placement: .bottomBar) {
+                        Text(photo.capturedAt.timestampText)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
 #Preview {
-    NavigationStack { RoomDetailView(room: SampleData.rooms[2]) }
+    NavigationStack { RoomDetailView(room: AppStore.previewTenancy.sortedRooms[2]) }
+        .modelContainer(AppStore.preview)
 }

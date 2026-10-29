@@ -1,40 +1,37 @@
+import SwiftData
 import SwiftUI
 
 struct IssueDetailView: View {
-    var issue: Issue
+    @Bindable var issue: Issue
 
     @Environment(\.dismiss) private var dismiss
-    @State private var severity: Severity
-    @State private var notes: String
-    @State private var suggestion: String
-    @State private var isSuggestionConfirmed = false
+    @Environment(\.modelContext) private var context
     @State private var isChangingSuggestion = false
     @State private var isConfirmingDelete = false
 
-    private let suggestionOptions = ["chip or scratch", "scuff", "crack", "stain", "dent", "wear and tear"]
-
-    init(issue: Issue) {
-        self.issue = issue
-        _severity = State(initialValue: issue.severity)
-        _notes = State(initialValue: issue.notes)
-        _suggestion = State(initialValue: issue.suggestion)
-    }
+    private var photo: Photo? { issue.sortedPhotos.first }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                BenchtopPhoto(flagExisting: true)
-                    .frame(height: 220)
-                    .clipShape(.rect(cornerRadius: 20))
-                    .overlay(alignment: .bottomLeading) {
-                        TimestampLabel(text: issue.capturedAt).padding(14)
+                Group {
+                    if let photo {
+                        Color.clear.overlay { PhotoThumbnail(fileName: photo.fileName) }
+                    } else {
+                        BenchtopPhoto(flagExisting: true)
                     }
+                }
+                .frame(height: 220)
+                .clipShape(.rect(cornerRadius: 20))
+                .overlay(alignment: .bottomLeading) {
+                    TimestampLabel(text: "Move-in · \((photo?.capturedAt ?? issue.createdAt).timestampText)").padding(14)
+                }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(issue.title)
+                    TextField("Where is it?", text: $issue.title, axis: .vertical)
                         .font(.system(size: 26, weight: .bold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text("\(issue.roomName) · \(issue.photoCount) photos")
+                    Text("\(issue.room?.name ?? "") · \(issue.photos.count.counted("photo"))")
                         .font(.system(size: 17))
                         .foregroundStyle(Theme.textSecondary)
                 }
@@ -43,12 +40,12 @@ struct IssueDetailView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     SectionLabel("Severity")
-                    SeverityPicker(selection: $severity)
+                    SeverityPicker(selection: $issue.severity)
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
                     SectionLabel("Notes")
-                    TextField("Describe the damage", text: $notes, axis: .vertical)
+                    TextField("Describe the damage", text: $issue.notes, axis: .vertical)
                         .lineLimit(3...8)
                         .font(.system(size: 17))
                         .foregroundStyle(Theme.textPrimary)
@@ -69,22 +66,29 @@ struct IssueDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Button("Save issue") { dismiss() }
-                .buttonStyle(.primary)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(Theme.background)
+            Button("Save issue") {
+                try? context.save()
+                dismiss()
+            }
+            .buttonStyle(.primary)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(Theme.background)
         }
         .confirmationDialog("Delete this issue?", isPresented: $isConfirmingDelete, titleVisibility: .visible) {
-            Button("Delete issue", role: .destructive) { dismiss() }
+            Button("Delete issue", role: .destructive) {
+                dismiss()
+                context.delete(issue)
+                try? context.save()
+            }
         } message: {
             Text("Its photos stay in the room.")
         }
         .confirmationDialog("What kind of damage is it?", isPresented: $isChangingSuggestion, titleVisibility: .visible) {
-            ForEach(suggestionOptions, id: \.self) { option in
+            ForEach(SampleData.suggestionOptions, id: \.self) { option in
                 Button(option.capitalized) {
-                    suggestion = option
-                    isSuggestionConfirmed = true
+                    issue.suggestion = option
+                    issue.isSuggestionConfirmed = true
                 }
             }
         }
@@ -93,22 +97,28 @@ struct IssueDetailView: View {
     private var suggestionCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 14) {
-                Image(systemName: isSuggestionConfirmed ? "checkmark.circle.fill" : "sparkle")
+                Image(systemName: issue.isSuggestionConfirmed ? "checkmark.circle.fill" : "sparkle")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Theme.brand)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(isSuggestionConfirmed ? "Marked as \(suggestion)" : "Suggested: \(suggestion)")
+                    Text(issue.isSuggestionConfirmed ? "Marked as \(issue.suggestion)" : "Suggested: \(issue.suggestion)")
                         .font(.system(size: 19, weight: .semibold))
                         .foregroundStyle(Theme.brandStrong)
                     Text("Found on this iPhone. Your photos stay on your device.")
                         .font(.system(size: 15))
                         .foregroundStyle(Theme.textSecondary)
                 }
+                Spacer(minLength: 0)
+                if issue.isSuggestionConfirmed {
+                    Button("Change") { isChangingSuggestion = true }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.brandStrong)
+                }
             }
 
-            if !isSuggestionConfirmed {
+            if !issue.isSuggestionConfirmed {
                 HStack(spacing: 14) {
-                    Button("Confirm") { withAnimation { isSuggestionConfirmed = true } }
+                    Button("Confirm") { withAnimation { issue.isSuggestionConfirmed = true } }
                         .buttonStyle(.primary)
                     Button("Change") { isChangingSuggestion = true }
                         .buttonStyle(.secondary)
@@ -155,5 +165,6 @@ private struct SeverityPicker: View {
 }
 
 #Preview {
-    NavigationStack { IssueDetailView(issue: SampleData.benchtopChip) }
+    NavigationStack { IssueDetailView(issue: AppStore.previewTenancy.sortedRooms[2].sortedIssues[0]) }
+        .modelContainer(AppStore.preview)
 }

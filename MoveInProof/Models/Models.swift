@@ -1,26 +1,111 @@
 import Foundation
+import SwiftData
 
-struct Tenancy {
+// MARK: - Stored models
+
+@Model
+final class Tenancy {
     var streetAddress: String
     var suburb: String
-    var term: String
-    var reportDue: String
-    var reportDaysLeft: Int
-    var leaseEnds: String
-    var leaseDaysLeft: Int
+    var leaseStart: Date
+    var leaseEnd: Date
+    var reportDue: Date
     var moveOutInspection: Date?
+
+    @Relationship(deleteRule: .cascade, inverse: \Room.tenancy)
+    var rooms: [Room] = []
+
+    init(streetAddress: String, suburb: String, leaseStart: Date, leaseEnd: Date, reportDue: Date) {
+        self.streetAddress = streetAddress
+        self.suburb = suburb
+        self.leaseStart = leaseStart
+        self.leaseEnd = leaseEnd
+        self.reportDue = reportDue
+    }
+
+    var sortedRooms: [Room] { rooms.sorted { $0.order < $1.order } }
+    var nextRoom: Room? { sortedRooms.first { !$0.isComplete } }
+    var completedRoomCount: Int { rooms.filter(\.isComplete).count }
+    var photoCount: Int { rooms.reduce(0) { $0 + $1.photos.count } }
+    var issueCount: Int { rooms.reduce(0) { $0 + $1.issues.count } }
+
+    func status(of room: Room) -> RoomStatus {
+        if room.isComplete { return .done }
+        if room == nextRoom { return .upNext }
+        return room.photos.isEmpty ? .notStarted : .inProgress
+    }
 }
+
+@Model
+final class Room {
+    var name: String
+    var order: Int
+    var isComplete: Bool = false
+    var tenancy: Tenancy?
+
+    @Relationship(deleteRule: .cascade, inverse: \Photo.room)
+    var photos: [Photo] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \Issue.room)
+    var issues: [Issue] = []
+
+    init(name: String, order: Int) {
+        self.name = name
+        self.order = order
+    }
+
+    var sortedPhotos: [Photo] { photos.sorted { $0.capturedAt < $1.capturedAt } }
+    var sortedIssues: [Issue] { issues.sorted { $0.createdAt < $1.createdAt } }
+}
+
+/// A photo's image lives on disk (see `PhotoStore`); the record holds its file name and metadata.
+@Model
+final class Photo {
+    var fileName: String
+    var capturedAt: Date
+    var location: String
+    var room: Room?
+    var issue: Issue?
+
+    init(fileName: String, capturedAt: Date = .now, location: String) {
+        self.fileName = fileName
+        self.capturedAt = capturedAt
+        self.location = location
+    }
+}
+
+@Model
+final class Issue {
+    var title: String
+    var suggestion: String
+    var isSuggestionConfirmed: Bool = false
+    var severityRaw: String = Severity.minor.rawValue
+    var notes: String = ""
+    var createdAt: Date
+    var room: Room?
+
+    // Deleting an issue keeps its photos in the room.
+    @Relationship(deleteRule: .nullify, inverse: \Photo.issue)
+    var photos: [Photo] = []
+
+    init(title: String, suggestion: String, createdAt: Date = .now) {
+        self.title = title
+        self.suggestion = suggestion
+        self.createdAt = createdAt
+    }
+
+    var severity: Severity {
+        get { Severity(rawValue: severityRaw) ?? .minor }
+        set { severityRaw = newValue.rawValue }
+    }
+
+    var sortedPhotos: [Photo] { photos.sorted { $0.capturedAt < $1.capturedAt } }
+}
+
+// MARK: - Value types
 
 enum RoomStatus: Hashable {
-    case done, upNext, notStarted
-}
-
-struct Room: Identifiable, Hashable {
-    var id: String { name }
-    var name: String
-    var photoCount: Int
-    var status: RoomStatus
-    var issues: [Issue] = []
+    case done, upNext, inProgress, notStarted
 }
 
 enum Severity: String, CaseIterable, Identifiable {
@@ -31,38 +116,8 @@ enum Severity: String, CaseIterable, Identifiable {
     var id: Self { self }
 }
 
-struct Issue: Identifiable, Hashable {
-    let id = UUID()
-    var title: String
-    var roomName: String
-    var photoCount: Int
-    var suggestion: String
-    var severity: Severity
-    var notes: String
-    var capturedAt: String
-}
-
 enum CompareStatus: String {
     case existing = "Existing"
     case new = "New"
     case noChange = "No change"
-}
-
-struct CompareItem: Identifiable {
-    let id = UUID()
-    var title: String
-    var detail: String
-    var status: CompareStatus
-}
-
-struct RoomComparison {
-    var roomName: String
-    var moveInDate: String
-    var moveOutDate: String
-    var unchangedCount: Int
-    var items: [CompareItem]
-
-    func count(_ status: CompareStatus) -> Int {
-        items.filter { $0.status == status }.count
-    }
 }
