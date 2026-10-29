@@ -1,65 +1,52 @@
+import SwiftData
 import SwiftUI
 
+/// Move-in vs move-out. Move-out capture isn't built yet, so this shows the move-in side
+/// (existing issues and photos) and leaves the move-out side waiting.
 struct CompareView: View {
-    @State private var selectedRoom = "Kitchen"
+    var tenancy: Tenancy
+
+    @State private var selectedRoomID: PersistentIdentifier?
 
     // Rooms with flagged issues first, since that's where disputes happen.
-    private let roomNames = SampleData.rooms
-        .filter { $0.status == .done }
-        .sorted { $0.issues.count > $1.issues.count }
-        .map(\.name)
-    private var comparison: RoomComparison { SampleData.comparison(for: selectedRoom) }
+    private var rooms: [Room] {
+        tenancy.sortedRooms
+            .filter { !$0.photos.isEmpty }
+            .sorted { $0.issues.count > $1.issues.count }
+    }
+
+    private var selectedRoom: Room? {
+        rooms.first { $0.persistentModelID == selectedRoomID } ?? rooms.first
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                ScreenHeader(title: "Compare", subtitle: "\(selectedRoom) · Move-in vs move-out")
+                ScreenHeader(title: "Compare", subtitle: "\(selectedRoom?.name ?? "No rooms yet") · Move-in vs move-out")
                     .padding(.horizontal, 20)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(roomNames, id: \.self) { name in
-                            FilterChip(title: name, isSelected: name == selectedRoom) {
-                                withAnimation { selectedRoom = name }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                }
-
-                VStack(alignment: .leading, spacing: 22) {
-                    HStack(alignment: .top, spacing: 12) {
-                        ComparePhoto(title: "Move-in", date: comparison.moveInDate, showNewDamage: false)
-                        ComparePhoto(title: "Move-out", date: comparison.moveOutDate, showNewDamage: comparison.count(.new) > 0)
-                    }
-
-                    HStack(spacing: 12) {
-                        StatTile(value: comparison.count(.existing), label: "Existing", tone: .brand)
-                        StatTile(value: comparison.count(.new), label: "New", tone: .danger)
-                        StatTile(value: comparison.unchangedCount, label: "No change", tone: .neutral)
-                    }
-
-                    DividedStack {
-                        ForEach(comparison.items) { item in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.title)
-                                        .font(.rowTitle)
-                                        .foregroundStyle(Theme.textPrimary)
-                                    Text(item.detail)
-                                        .font(.rowSubtitle)
-                                        .foregroundStyle(Theme.textSecondary)
+                if let room = selectedRoom {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(rooms) { candidate in
+                                FilterChip(title: candidate.name, isSelected: candidate == room) {
+                                    withAnimation { selectedRoomID = candidate.persistentModelID }
                                 }
-                                Spacer()
-                                Pill(text: item.status.rawValue, tone: item.status.tone)
                             }
-                            .padding(.horizontal, 20)
-                            .frame(minHeight: 76)
                         }
+                        .padding(.horizontal, 20)
                     }
-                    .card()
+
+                    comparison(for: room)
+                        .padding(.horizontal, 20)
+                } else {
+                    Text("Photograph a room in your move-in report and it will show up here.")
+                        .font(.rowSubtitle)
+                        .foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .card(padding: 20)
+                        .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
             }
             .padding(.top, 8)
             .padding(.bottom, 32)
@@ -67,17 +54,80 @@ struct CompareView: View {
         .background(Theme.background)
         .toolbar(.hidden, for: .navigationBar)
     }
+
+    private func comparison(for room: Room) -> some View {
+        let moveInPhoto = room.sortedIssues.first?.sortedPhotos.first ?? room.sortedPhotos.first
+
+        return VStack(alignment: .leading, spacing: 22) {
+            HStack(alignment: .top, spacing: 12) {
+                CompareColumn(title: "Move-in", date: moveInPhoto?.capturedAt.shortText ?? "") {
+                    PhotoThumbnail(fileName: moveInPhoto?.fileName)
+                }
+                CompareColumn(title: "Move-out", date: tenancy.moveOutInspection.map { "Booked \($0.shortText)" } ?? "Not taken yet") {
+                    VStack(spacing: 8) {
+                        Image(systemName: "camera")
+                            .font(.system(size: 22, weight: .medium))
+                        Text("Waiting for\nmove-out photos")
+                            .font(.system(size: 13, weight: .medium))
+                            .multilineTextAlignment(.center)
+                    }
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Theme.surfaceSunken)
+                }
+            }
+
+            HStack(spacing: 12) {
+                StatTile(value: "\(room.issues.count)", label: "Existing", tone: .brand)
+                StatTile(value: "–", label: "New", tone: .danger)
+                StatTile(value: "–", label: "No change", tone: .neutral)
+            }
+
+            if room.issues.isEmpty {
+                Text("No issues were flagged in this room at move-in.")
+                    .font(.rowSubtitle)
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .card(padding: 20)
+            } else {
+                DividedStack {
+                    ForEach(room.sortedIssues) { issue in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(issue.title)
+                                    .font(.rowTitle)
+                                    .foregroundStyle(Theme.textPrimary)
+                                Text("\(issue.suggestion.capitalized), flagged at move-in")
+                                    .font(.rowSubtitle)
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            Spacer()
+                            Pill(text: CompareStatus.existing.rawValue, tone: CompareStatus.existing.tone)
+                        }
+                        .padding(.horizontal, 20)
+                        .frame(minHeight: 76)
+                    }
+                }
+                .card()
+            }
+
+            Text("New damage and unchanged areas will show here once you take your move-out photos.")
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.textSecondary)
+        }
+    }
 }
 
-private struct ComparePhoto: View {
+private struct CompareColumn<Content: View>: View {
     var title: String
     var date: String
-    var showNewDamage: Bool
+    @ViewBuilder var image: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            BenchtopPhoto(showNewDamage: showNewDamage)
+            Color.clear
                 .aspectRatio(1.2, contentMode: .fit)
+                .overlay { image }
                 .clipShape(.rect(cornerRadius: 18))
                 .padding(.bottom, 8)
             Text(title)
@@ -92,13 +142,13 @@ private struct ComparePhoto: View {
 }
 
 private struct StatTile: View {
-    var value: Int
+    var value: String
     var label: String
     var tone: PillTone
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("\(value)")
+            Text(value)
                 .font(.system(size: 30, weight: .bold))
                 .contentTransition(.numericText())
             Text(label)
@@ -124,5 +174,6 @@ private extension CompareStatus {
 }
 
 #Preview {
-    NavigationStack { CompareView() }
+    NavigationStack { CompareView(tenancy: AppStore.previewTenancy) }
+        .modelContainer(AppStore.preview)
 }

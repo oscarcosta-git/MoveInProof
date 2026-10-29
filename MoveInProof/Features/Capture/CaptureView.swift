@@ -1,15 +1,18 @@
+import SwiftData
 import SwiftUI
 
-/// Camera screen. The viewfinder shows a drawn placeholder until AVFoundation capture is added.
+/// Camera screen. The viewfinder shows a drawn placeholder until AVFoundation capture is added;
+/// the shutter saves that placeholder as a real photo file so storage works end to end.
 struct CaptureView: View {
-    var roomName: String
+    @Bindable var room: Room
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
     @State private var location = SampleData.captureLocations[0]
     @State private var selectedTag: String? = "Scuff"
-    @State private var photoCount = 9
     @State private var isFlashOn = false
     @State private var isShutterFlashing = false
+    @State private var saveError: String?
 
     var body: some View {
         VStack(spacing: 16) {
@@ -23,6 +26,11 @@ struct CaptureView: View {
         .background(Theme.camera.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .statusBarHidden()
+        .alert("Couldn't save the photo", isPresented: .constant(saveError != nil)) {
+            Button("OK") { saveError = nil }
+        } message: {
+            Text(saveError ?? "")
+        }
     }
 
     private var topBar: some View {
@@ -35,8 +43,10 @@ struct CaptureView: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Text("\(roomName) · \(location)")
+                    Text("\(room.name) · \(location)")
                         .font(.system(size: 17, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 13, weight: .bold))
                 }
@@ -58,8 +68,8 @@ struct CaptureView: View {
                 WallScene()
 
                 // On-device detection overlay
-                if selectedTag != nil {
-                    Label("Possible \((selectedTag ?? "scuff").lowercased())", systemImage: "sparkle")
+                if let selectedTag {
+                    Label("Possible \(selectedTag == "More" ? "damage" : selectedTag.lowercased())", systemImage: "sparkle")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(Theme.onMint)
                         .padding(.horizontal, 12)
@@ -71,8 +81,10 @@ struct CaptureView: View {
                         .offset(x: w * 0.49, y: h * 0.555)
                 }
 
-                TimestampLabel(text: Date.now.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).year()) + " · " + Date.now.formatted(date: .omitted, time: .shortened))
-                    .offset(x: 20, y: h - 72)
+                TimelineView(.everyMinute) { context in
+                    TimestampLabel(text: context.date.timestampText)
+                }
+                .offset(x: 20, y: h - 72)
 
                 Color.white
                     .opacity(isShutterFlashing ? 0.8 : 0)
@@ -109,18 +121,21 @@ struct CaptureView: View {
 
     private var bottomControls: some View {
         HStack {
-            PhotoSwatch(seed: 2)
+            Color.clear
                 .frame(width: 64, height: 64)
+                .overlay { PhotoThumbnail(fileName: room.sortedPhotos.last?.fileName, seed: 2) }
                 .clipShape(.rect(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.white, lineWidth: 2))
                 .overlay(alignment: .topTrailing) {
-                    Text("\(photoCount)")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Theme.onMint)
-                        .frame(minWidth: 28, minHeight: 28)
-                        .background(Theme.mint, in: .circle)
-                        .offset(x: 10, y: -10)
-                        .contentTransition(.numericText())
+                    if !room.photos.isEmpty {
+                        Text("\(room.photos.count)")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Theme.onMint)
+                            .frame(minWidth: 28, minHeight: 28)
+                            .background(Theme.mint, in: .circle)
+                            .offset(x: 10, y: -10)
+                            .contentTransition(.numericText())
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -133,7 +148,7 @@ struct CaptureView: View {
             }
             .accessibilityLabel("Take photo")
 
-            Button("Done") { dismiss() }
+            Button("Done", action: finish)
                 .font(.system(size: 19, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 24)
@@ -158,10 +173,40 @@ struct CaptureView: View {
     private func takePhoto() {
         withAnimation(.easeOut(duration: 0.08)) { isShutterFlashing = true }
         withAnimation(.easeIn(duration: 0.25).delay(0.08)) { isShutterFlashing = false }
-        withAnimation { photoCount += 1 }
+
+        let capturedAt = Date.now
+        do {
+            guard let image = PhotoStore.renderPlaceholderPhoto(at: capturedAt) else { throw CocoaError(.fileWriteUnknown) }
+            let fileName = try PhotoStore.save(image)
+            let photo = Photo(fileName: fileName, capturedAt: capturedAt, location: location)
+            context.insert(photo)
+            withAnimation { photo.room = room }
+
+            // A selected tag flags this shot as an issue, then clears so the next shot is a plain photo.
+            if let selectedTag {
+                let kind = selectedTag == "More" ? "damage" : selectedTag.lowercased()
+                let issue = Issue(title: "\(kind.capitalized) on \(location.lowercased())", suggestion: kind, createdAt: capturedAt)
+                context.insert(issue)
+                issue.room = room
+                photo.issue = issue
+                self.selectedTag = nil
+            }
+            try context.save()
+        } catch {
+            saveError = error.localizedDescription
+        }
+    }
+
+    private func finish() {
+        if !room.photos.isEmpty {
+            room.isComplete = true
+            try? context.save()
+        }
+        dismiss()
     }
 }
 
 #Preview {
-    CaptureView(roomName: "Bedroom 2")
+    CaptureView(room: AppStore.previewTenancy.sortedRooms[5])
+        .modelContainer(AppStore.preview)
 }

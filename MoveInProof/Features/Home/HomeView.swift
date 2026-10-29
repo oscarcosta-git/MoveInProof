@@ -1,8 +1,11 @@
+import SwiftData
 import SwiftUI
 
 struct HomeView: View {
-    @State private var tenancy = SampleData.tenancy
-    @State private var isCapturing = false
+    @Bindable var tenancy: Tenancy
+    @Binding var selectedTab: AppTab
+
+    @State private var capturingRoom: Room?
     @State private var isPickingInspectionDate = false
     @State private var isShowingSettings = false
 
@@ -27,16 +30,15 @@ struct HomeView: View {
                     keyDates
                 }
 
-                if let next = SampleData.nextRoom {
-                    MoveInProgressCard(
-                        completed: SampleData.completedRooms,
-                        total: SampleData.rooms.count,
-                        photos: SampleData.totalPhotos,
-                        issues: SampleData.totalIssues,
-                        nextRoomName: next.name,
-                        onContinue: { isCapturing = true }
-                    )
-                }
+                MoveInProgressCard(
+                    completed: tenancy.completedRoomCount,
+                    total: tenancy.rooms.count,
+                    photos: tenancy.photoCount,
+                    issues: tenancy.issueCount,
+                    nextRoomName: tenancy.nextRoom?.name,
+                    onContinue: { capturingRoom = tenancy.nextRoom },
+                    onExport: { selectedTab = .export }
+                )
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -44,25 +46,25 @@ struct HomeView: View {
         }
         .background(Theme.background)
         .toolbar(.hidden, for: .navigationBar)
-        .fullScreenCover(isPresented: $isCapturing) {
-            CaptureView(roomName: SampleData.nextRoom?.name ?? "Bedroom 2")
+        .fullScreenCover(item: $capturingRoom) { room in
+            CaptureView(room: room)
         }
         .sheet(isPresented: $isPickingInspectionDate) {
             InspectionDateSheet(date: $tenancy.moveOutInspection)
         }
         .sheet(isPresented: $isShowingSettings) {
-            TenancySettingsSheet(tenancy: tenancy)
+            TenancySettingsView(tenancy: tenancy)
         }
     }
 
     private var keyDates: some View {
         DividedStack {
-            KeyDateRow(title: "Condition report due", subtitle: tenancy.reportDue) {
-                Pill(text: "\(tenancy.reportDaysLeft) days left", tone: .warning)
+            KeyDateRow(title: "Condition report due", subtitle: tenancy.reportDue.longText) {
+                reportDuePill
             }
             KeyDateRow(
                 title: "Move-out inspection",
-                subtitle: tenancy.moveOutInspection.map { $0.formatted(.dateTime.weekday().day().month().year()) } ?? "Not booked yet"
+                subtitle: tenancy.moveOutInspection?.longText ?? "Not booked yet"
             ) {
                 Button(tenancy.moveOutInspection == nil ? "Add date" : "Change") {
                     isPickingInspectionDate = true
@@ -73,11 +75,25 @@ struct HomeView: View {
                 .frame(height: 48)
                 .background(Theme.brandTint, in: .capsule)
             }
-            KeyDateRow(title: "Lease ends", subtitle: tenancy.leaseEnds) {
-                Pill(text: "\(tenancy.leaseDaysLeft) days", tone: .neutral)
+            KeyDateRow(title: "Lease ends", subtitle: tenancy.leaseEnd.longText) {
+                Pill(text: max(tenancy.leaseEnd.daysFromToday, 0).counted("day"), tone: .neutral)
             }
         }
         .card()
+    }
+
+    @ViewBuilder
+    private var reportDuePill: some View {
+        let days = tenancy.reportDue.daysFromToday
+        if tenancy.nextRoom == nil {
+            Pill(text: "Ready", tone: .brand)
+        } else if days < 0 {
+            Pill(text: "Overdue", tone: .danger)
+        } else if days == 0 {
+            Pill(text: "Due today", tone: .warning)
+        } else {
+            Pill(text: "\(days.counted("day")) left", tone: .warning)
+        }
     }
 }
 
@@ -95,10 +111,12 @@ private struct PropertyCard: View {
                 Text(tenancy.streetAddress)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Theme.textPrimary)
-                Text(tenancy.suburb)
-                    .font(.system(size: 18))
-                    .foregroundStyle(Theme.textSecondary)
-                Text(tenancy.term)
+                if !tenancy.suburb.isEmpty {
+                    Text(tenancy.suburb)
+                        .font(.system(size: 18))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Text("Fixed term · \(tenancy.leaseStart.shortText) – \(tenancy.leaseEnd.shortText)")
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(1)
@@ -139,8 +157,9 @@ private struct MoveInProgressCard: View {
     var total: Int
     var photos: Int
     var issues: Int
-    var nextRoomName: String
+    var nextRoomName: String?
     var onContinue: () -> Void
+    var onExport: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -149,7 +168,7 @@ private struct MoveInProgressCard: View {
                 .tracking(0.8)
                 .foregroundStyle(Color(hex: 0x9AA4B4))
 
-            Text("\(completed) of \(total) rooms done")
+            Text(nextRoomName == nil ? "All rooms done" : "\(completed) of \(total) rooms done")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(.white)
 
@@ -163,8 +182,8 @@ private struct MoveInProgressCard: View {
             .frame(height: 10)
 
             HStack(spacing: 24) {
-                Text("\(photos) photos")
-                Text("\(issues) issues flagged")
+                Text(photos.counted("photo"))
+                Text("\(issues.counted("issue")) flagged")
             }
             .font(.system(size: 17))
             .foregroundStyle(Color(hex: 0xD7DCE3))
@@ -173,10 +192,18 @@ private struct MoveInProgressCard: View {
                 .font(.system(size: 17))
                 .foregroundStyle(Color(hex: 0xD7DCE3))
 
-            Button(action: onContinue) {
-                Label("Continue with \(nextRoomName)", systemImage: "camera")
-                    .font(.system(size: 20, weight: .semibold))
+            Group {
+                if let nextRoomName {
+                    Button(action: onContinue) {
+                        Label(photos == 0 ? "Start with \(nextRoomName)" : "Continue with \(nextRoomName)", systemImage: "camera")
+                    }
+                } else {
+                    Button(action: onExport) {
+                        Label("Export report", systemImage: "square.and.arrow.up")
+                    }
+                }
             }
+            .font(.system(size: 20, weight: .semibold))
             .buttonStyle(PrimaryButtonStyle(background: Theme.mint, foreground: Theme.onMint))
             .padding(.top, 4)
         }
@@ -201,6 +228,14 @@ private struct InspectionDateSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    if date != nil {
+                        ToolbarItem(placement: .destructiveAction) {
+                            Button("Remove", role: .destructive) {
+                                date = nil
+                                dismiss()
+                            }
+                        }
+                    }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") {
                             date = draft
@@ -214,31 +249,7 @@ private struct InspectionDateSheet: View {
     }
 }
 
-private struct TenancySettingsSheet: View {
-    var tenancy: Tenancy
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("Property") {
-                    LabeledContent("Address", value: tenancy.streetAddress)
-                    LabeledContent("Suburb", value: tenancy.suburb)
-                }
-                Section("Lease") {
-                    LabeledContent("Term", value: "Fixed term")
-                    LabeledContent("Ends", value: tenancy.leaseEnds)
-                }
-            }
-            .navigationTitle("Tenancy")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
-            }
-        }
-    }
-}
-
 #Preview {
-    NavigationStack { HomeView() }
+    NavigationStack { HomeView(tenancy: AppStore.previewTenancy, selectedTab: .constant(.home)) }
+        .modelContainer(AppStore.preview)
 }
