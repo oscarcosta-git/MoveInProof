@@ -1,17 +1,20 @@
 import SwiftData
 import SwiftUI
 
-/// Camera screen. The viewfinder shows a drawn placeholder until AVFoundation capture is added;
-/// the shutter saves that placeholder as a real photo file so storage works end to end.
+/// Camera screen. Uses the back camera; where there isn't one (the Simulator) it shows a drawn
+/// placeholder and saves that instead, so the rest of the flow still works.
 struct CaptureView: View {
     @Bindable var room: Room
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
+    @Environment(\.openURL) private var openURL
+    @State private var camera = CameraController()
     @State private var location = SampleData.captureLocations[0]
-    @State private var selectedTag: String? = "Scuff"
-    @State private var isFlashOn = false
+    @State private var selectedTag: String?
+    @State private var isCapturing = false
     @State private var isShutterFlashing = false
+    @State private var focusPoint: CGPoint?
     @State private var saveError: String?
 
     var body: some View {
@@ -26,6 +29,12 @@ struct CaptureView: View {
         .background(Theme.camera.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .statusBarHidden()
+        .task {
+            await camera.start()
+            // The placeholder scene has a scuff drawn on it, so suggest one like detection would.
+            if camera.status == .unavailable { selectedTag = "Scuff" }
+        }
+        .onDisappear { camera.stop() }
         .alert("Couldn't save the photo", isPresented: .constant(saveError != nil)) {
             Button("OK") { saveError = nil }
         } message: {
@@ -56,42 +65,107 @@ struct CaptureView: View {
                 .background(Theme.cameraControl, in: .capsule)
             }
             Spacer()
-            cameraIconButton(isFlashOn ? "bolt.fill" : "bolt", label: "Flash") { isFlashOn.toggle() }
+            cameraIconButton(camera.isFlashOn ? "bolt.fill" : "bolt.slash", label: camera.isFlashOn ? "Flash on" : "Flash off") {
+                camera.isFlashOn.toggle()
+            }
+            .disabled(camera.status == .ready && !camera.hasFlash)
         }
     }
 
     private var viewfinder: some View {
         GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
             ZStack(alignment: .topLeading) {
-                WallScene()
-
-                // On-device detection overlay
-                if let selectedTag {
-                    Label("Possible \(selectedTag == "More" ? "damage" : selectedTag.lowercased())", systemImage: "sparkle")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Theme.onMint)
-                        .padding(.horizontal, 12)
-                        .frame(height: 34)
-                        .background(Theme.mint, in: .rect(cornerRadius: 8))
-                        .offset(x: w * 0.53, y: h * 0.497)
-                    DetectionBox()
-                        .frame(width: w * 0.4, height: h * 0.146)
-                        .offset(x: w * 0.49, y: h * 0.555)
+                switch camera.status {
+                case .ready:
+                    CameraPreview(session: camera.worker.session) { devicePoint, viewPoint in
+                        camera.focus(at: devicePoint)
+                        showFocusRing(at: viewPoint)
+                    }
+                    if let focusPoint {
+                        RoundedRectangle(cornerRadius: 6)
+                            .strokeBorder(Theme.mint, lineWidth: 2)
+                            .frame(width: 76, height: 76)
+                            .position(focusPoint)
+                            .allowsHitTesting(false)
+                            .transition(.scale(scale: 1.4).combined(with: .opacity))
+                    }
+                case .unavailable:
+                    placeholderScene(size: geo.size)
+                case .denied:
+                    cameraMessage(
+                        icon: "camera.fill",
+                        title: "Camera access is off",
+                        detail: "Turn on camera access for MoveIn Proof in Settings to photograph your rooms.",
+                        action: ("Open Settings", { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } })
+                    )
+                case .failed:
+                    cameraMessage(icon: "exclamationmark.triangle.fill", title: "The camera couldn't start", detail: "Close this screen and try again.")
+                case .starting:
+                    ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
 
-                TimelineView(.everyMinute) { context in
-                    TimestampLabel(text: context.date.timestampText)
+                if canCapture {
+                    TimelineView(.everyMinute) { context in
+                        TimestampLabel(text: context.date.timestampText)
+                    }
+                    .offset(x: 20, y: geo.size.height - 72)
+                    .allowsHitTesting(false)
                 }
-                .offset(x: 20, y: h - 72)
 
                 Color.white
                     .opacity(isShutterFlashing ? 0.8 : 0)
                     .allowsHitTesting(false)
             }
         }
+        .background(Color.black)
         .clipShape(.rect(cornerRadius: 26))
+    }
+
+    /// The drawn wall with the mock detection overlay from the mockups.
+    private func placeholderScene(size: CGSize) -> some View {
+        let w = size.width
+        let h = size.height
+        return ZStack(alignment: .topLeading) {
+            WallScene()
+            if let selectedTag {
+                Label("Possible \(selectedTag == "More" ? "damage" : selectedTag.lowercased())", systemImage: "sparkle")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.onMint)
+                    .padding(.horizontal, 12)
+                    .frame(height: 34)
+                    .background(Theme.mint, in: .rect(cornerRadius: 8))
+                    .offset(x: w * 0.53, y: h * 0.497)
+                DetectionBox()
+                    .frame(width: w * 0.4, height: h * 0.146)
+                    .offset(x: w * 0.49, y: h * 0.555)
+            }
+        }
+    }
+
+    private func cameraMessage(icon: String, title: String, detail: String, action: (String, () -> Void)? = nil) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 34))
+                .foregroundStyle(Theme.mint)
+            Text(title)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+            Text(detail)
+                .font(.system(size: 16))
+                .foregroundStyle(Color(hex: 0xB7BEC9))
+                .multilineTextAlignment(.center)
+            if let action {
+                Button(action.0, action: action.1)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.onMint)
+                    .padding(.horizontal, 22)
+                    .frame(height: 46)
+                    .background(Theme.mint, in: .capsule)
+                    .padding(.top, 6)
+            }
+        }
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var tagRow: some View {
@@ -139,13 +213,17 @@ struct CaptureView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button(action: takePhoto) {
+            Button {
+                Task { await takePhoto() }
+            } label: {
                 Circle()
                     .fill(.white)
                     .frame(width: 70, height: 70)
                     .padding(6)
                     .overlay(Circle().strokeBorder(.white, lineWidth: 5))
+                    .opacity(isCapturing || !canCapture ? 0.4 : 1)
             }
+            .disabled(isCapturing || !canCapture)
             .accessibilityLabel("Take photo")
 
             Button("Done", action: finish)
@@ -159,6 +237,10 @@ struct CaptureView: View {
         .padding(.horizontal, 4)
     }
 
+    private var canCapture: Bool {
+        camera.status == .ready || camera.status == .unavailable
+    }
+
     private func cameraIconButton(_ systemName: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
@@ -170,13 +252,32 @@ struct CaptureView: View {
         .accessibilityLabel(label)
     }
 
-    private func takePhoto() {
+    private func showFocusRing(at point: CGPoint) {
+        withAnimation(.easeOut(duration: 0.2)) { focusPoint = point }
+        Task {
+            try? await Task.sleep(for: .seconds(1.2))
+            if focusPoint == point {
+                withAnimation(.easeIn(duration: 0.2)) { focusPoint = nil }
+            }
+        }
+    }
+
+    private func takePhoto() async {
+        isCapturing = true
+        defer { isCapturing = false }
         withAnimation(.easeOut(duration: 0.08)) { isShutterFlashing = true }
         withAnimation(.easeIn(duration: 0.25).delay(0.08)) { isShutterFlashing = false }
 
         let capturedAt = Date.now
         do {
-            guard let image = PhotoStore.renderPlaceholderPhoto(at: capturedAt) else { throw CocoaError(.fileWriteUnknown) }
+            let image: UIImage
+            if camera.status == .ready {
+                image = PhotoStore.stamped(try await camera.capturePhoto(), at: capturedAt)
+            } else if let placeholder = PhotoStore.renderPlaceholderPhoto(at: capturedAt) {
+                image = placeholder
+            } else {
+                throw CocoaError(.fileWriteUnknown)
+            }
             let fileName = try PhotoStore.save(image)
             let photo = Photo(fileName: fileName, capturedAt: capturedAt, location: location)
             context.insert(photo)
