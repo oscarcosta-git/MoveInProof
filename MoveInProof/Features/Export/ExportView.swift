@@ -6,22 +6,30 @@ struct ExportView: View {
 
     @State private var includePhotos = true
     @State private var flaggedOnly = false
+    @State private var isGenerating = false
+    @State private var sharedFile: ExportedFile?
+    @State private var fileToSave: URL?
+    @State private var exportError: String?
 
-    private var includedRooms: [Room] {
-        tenancy.sortedRooms.filter { flaggedOnly ? !$0.issues.isEmpty : !$0.photos.isEmpty }
+    private var report: ConditionReportPDF {
+        ConditionReportPDF(tenancy: tenancy, includePhotos: includePhotos, flaggedOnly: flaggedOnly)
     }
+
+    private var includedRooms: [Room] { report.rooms }
 
     private var includedPhotoCount: Int {
         includedRooms.reduce(0) { $0 + $1.photos.count }
     }
 
     private var summary: String {
-        // Rough estimates until a real PDF is generated: a cover page, then a page per room
-        // plus a page per six photos, at roughly 90 KB per photo.
-        let photoPages = includePhotos ? includedRooms.reduce(0) { $0 + ($1.photos.count + 5) / 6 } : 0
-        let pages = 1 + includedRooms.count + photoPages
-        let bytes = Int64(40_000 * pages + (includePhotos ? 90_000 * includedPhotoCount : 0))
-        return "\(tenancy.streetAddress) · \(pages.counted("page")) · \(bytes.formatted(.byteCount(style: .file)))"
+        // Estimated from the PDF layout: a cover page, then each room starts a page that fits
+        // about nine photos, at roughly 15 KB per photo once downsized.
+        let roomPages = includedRooms.reduce(0) { total, room in
+            total + (includePhotos ? max(1, (room.photos.count + 3 + 8) / 9) : 1)
+        }
+        let pages = 1 + roomPages
+        let bytes = Int64(10_000 * pages + (includePhotos ? 15_000 * includedPhotoCount : 0))
+        return "\(tenancy.streetAddress) · about \(pages.counted("page")) · \(bytes.formatted(.byteCount(style: .file)))"
     }
 
     var body: some View {
@@ -49,17 +57,23 @@ struct ExportView: View {
                 .card()
 
                 VStack(spacing: 16) {
-                    // TODO: Generate the PDF and present the share sheet.
-                    Button {} label: {
-                        Label("Share PDF", systemImage: "square.and.arrow.up")
+                    Button {
+                        Task { sharedFile = await generate().map(ExportedFile.init) }
+                    } label: {
+                        if isGenerating {
+                            ProgressView().tint(Theme.onBrand)
+                        } else {
+                            Label("Share PDF", systemImage: "square.and.arrow.up")
+                        }
                     }
                     .buttonStyle(.primary)
 
-                    // TODO: Present a document exporter.
-                    Button("Save to Files") {}
-                        .buttonStyle(.secondary)
+                    Button("Save to Files") {
+                        Task { fileToSave = await generate() }
+                    }
+                    .buttonStyle(.secondary)
                 }
-                .disabled(includedRooms.isEmpty)
+                .disabled(includedRooms.isEmpty || isGenerating)
                 .opacity(includedRooms.isEmpty ? 0.5 : 1)
             }
             .padding(.horizontal, 20)
@@ -68,7 +82,49 @@ struct ExportView: View {
         }
         .background(Theme.background)
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(item: $sharedFile) { file in
+            ShareSheet(url: file.url)
+                .ignoresSafeArea()
+                .presentationDetents([.medium, .large])
+        }
+        .fileMover(isPresented: Binding(get: { fileToSave != nil }, set: { if !$0 { fileToSave = nil } }), file: fileToSave) { result in
+            if case .failure(let error) = result { exportError = error.localizedDescription }
+        }
+        .alert("Couldn't create the report", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+            Button("OK") { exportError = nil }
+        } message: {
+            Text(exportError ?? "")
+        }
     }
+
+    private func generate() async -> URL? {
+        isGenerating = true
+        defer { isGenerating = false }
+        // Let the button show its spinner before the main thread is busy drawing.
+        await Task.yield()
+        do {
+            return try report.write()
+        } catch {
+            exportError = error.localizedDescription
+            return nil
+        }
+    }
+}
+
+private struct ExportedFile: Identifiable {
+    var url: URL
+    var id: URL { url }
+}
+
+/// The system share sheet for a file.
+private struct ShareSheet: UIViewControllerRepresentable {
+    var url: URL
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }
 
 private struct ToggleRow: View {
