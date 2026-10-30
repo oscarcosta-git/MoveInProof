@@ -1,0 +1,216 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>MoveIn Proof Architecture</title>
+<style>@page { size: 1754px 1240px; margin: 0; } html, body { margin: 0; width: 1754px; height: 1240px; overflow: hidden; } svg { display: block; }</style>
+</head><body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1754" height="1240" viewBox="0 0 1754 1240" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#444"/></marker><marker id="acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1F6F64"/></marker></defs>
+<rect width="1754" height="1240" fill="#fff"/>
+<text x="40" y="52" font-size="24" font-weight="bold" fill="#222" text-anchor="start" >MoveIn Proof: architecture and data flow</text>
+<text x="40" y="76" font-size="14" font-weight="normal" fill="#777" text-anchor="start" >MVVM + use cases + repositories. SwiftUI, SwiftData, AVFoundation, WidgetKit. All storage is on the device.</text>
+<rect x="40" y="100" width="1250" height="185" fill="#fff" stroke="#BBB" stroke-width="1"/>
+<rect x="40" y="100" width="150" height="185" fill="#F3F3F3" stroke="#BBB" stroke-width="1"/>
+<text x="54" y="130" font-size="15" font-weight="bold" fill="#222" text-anchor="start" >View</text>
+<text x="54" y="150" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >SwiftUI screens</text>
+<rect x="40" y="285" width="1250" height="185" fill="#fff" stroke="#BBB" stroke-width="1"/>
+<rect x="40" y="285" width="150" height="185" fill="#F3F3F3" stroke="#BBB" stroke-width="1"/>
+<text x="54" y="315" font-size="15" font-weight="bold" fill="#222" text-anchor="start" >ViewModel</text>
+<text x="54" y="335" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >@Observable, @MainActor</text>
+<rect x="40" y="470" width="1250" height="185" fill="#fff" stroke="#BBB" stroke-width="1"/>
+<rect x="40" y="470" width="150" height="185" fill="#F3F3F3" stroke="#BBB" stroke-width="1"/>
+<text x="54" y="500" font-size="15" font-weight="bold" fill="#222" text-anchor="start" >Use cases</text>
+<text x="54" y="520" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >business rules,</text>
+<text x="54" y="536" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >throw MoveInError</text>
+<rect x="40" y="655" width="1250" height="195" fill="#fff" stroke="#BBB" stroke-width="1"/>
+<rect x="40" y="655" width="150" height="195" fill="#F3F3F3" stroke="#BBB" stroke-width="1"/>
+<text x="54" y="685" font-size="15" font-weight="bold" fill="#222" text-anchor="start" >Repositories</text>
+<text x="54" y="705" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >protocols (top line)</text>
+<text x="54" y="721" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >implementations (below)</text>
+<rect x="40" y="850" width="1250" height="200" fill="#fff" stroke="#BBB" stroke-width="1"/>
+<rect x="40" y="850" width="150" height="200" fill="#F3F3F3" stroke="#BBB" stroke-width="1"/>
+<text x="54" y="880" font-size="15" font-weight="bold" fill="#222" text-anchor="start" >Storage and</text>
+<text x="54" y="900" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >platform services</text>
+<rect x="210" y="135" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="290.0" y="162.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >SetupView</text>
+<rect x="386" y="135" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="466.0" y="162.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >HomeView</text>
+<rect x="562" y="135" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="642.0" y="162.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >ReportView</text>
+<rect x="738" y="135" width="160" height="44" rx="3" fill="#fff" stroke="#1F6F64" stroke-width="2"/>
+<text x="818.0" y="162.0" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="middle" >CaptureView</text>
+<rect x="914" y="135" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="994.0" y="162.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >RoomDetailView</text>
+<rect x="1090" y="135" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1170.0" y="162.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >IssueDetailView</text>
+<rect x="210" y="205" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="290.0" y="232.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >TenancySettingsView</text>
+<rect x="386" y="205" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="466.0" y="232.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >CompareView</text>
+<rect x="562" y="205" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="642.0" y="232.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >ExportView</text>
+<rect x="914" y="205" width="336" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1082.0" y="224.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >Shared UI: Theme, components,</text>
+<text x="1082.0" y="241.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >Dynamic Type helper, error alert</text>
+<rect x="210" y="320" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="290.0" y="347.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >SetupViewModel</text>
+<rect x="386" y="320" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="466.0" y="347.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >HomeViewModel</text>
+<rect x="562" y="320" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="642.0" y="347.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >CameraController</text>
+<rect x="738" y="320" width="160" height="44" rx="3" fill="#fff" stroke="#1F6F64" stroke-width="2"/>
+<text x="818.0" y="347.0" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="middle" >CaptureViewModel</text>
+<rect x="914" y="320" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="994.0" y="347.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >RoomDetailViewModel</text>
+<rect x="1090" y="320" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1170.0" y="347.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >IssueDetailViewModel</text>
+<rect x="210" y="390" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="290.0" y="417.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >RootViewModel</text>
+<rect x="386" y="390" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="466.0" y="417.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >TenancySettings VM</text>
+<rect x="562" y="390" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="642.0" y="417.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >ExportViewModel</text>
+<rect x="914" y="390" width="336" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="1082.0" y="409.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >AppDependencies</text>
+<text x="1082.0" y="426.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >builds repositories, creates ViewModels</text>
+<path d="M 738,342.0 L 723,342.0" fill="none" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<rect x="210" y="505" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="290.0" y="532.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >CreateTenancy</text>
+<rect x="386" y="505" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="466.0" y="532.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >UpdateTenancy</text>
+<rect x="562" y="505" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="642.0" y="532.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >ManageRooms</text>
+<rect x="738" y="505" width="160" height="44" rx="3" fill="#fff" stroke="#1F6F64" stroke-width="2"/>
+<text x="818.0" y="532.0" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="middle" >CapturePhoto</text>
+<rect x="914" y="505" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="994.0" y="532.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >FlagIssue</text>
+<rect x="1090" y="505" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1170.0" y="532.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >UpdateIssue</text>
+<rect x="210" y="575" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="290.0" y="602.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >LoadTenancy</text>
+<rect x="386" y="575" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="466.0" y="602.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >DeleteAllData</text>
+<rect x="562" y="575" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="642.0" y="602.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >CompleteRoom</text>
+<rect x="914" y="575" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="994.0" y="602.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >DeletePhoto</text>
+<rect x="1090" y="575" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1170.0" y="602.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >ExportReport</text>
+<rect x="386" y="700" width="160" height="56" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="466.0" y="725.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >TenancyRepository</text>
+<text x="466.0" y="742.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >SwiftData implementation</text>
+<rect x="738" y="700" width="160" height="56" rx="3" fill="#fff" stroke="#1F6F64" stroke-width="2"/>
+<text x="818.0" y="725.0" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="middle" >InspectionRepository</text>
+<text x="818.0" y="742.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >SwiftData implementation</text>
+<rect x="914" y="700" width="160" height="56" rx="3" fill="#fff" stroke="#1F6F64" stroke-width="2"/>
+<text x="994.0" y="725.0" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="middle" >PhotoFileStorage</text>
+<text x="994.0" y="742.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >LocalPhotoFileStorage</text>
+<rect x="1090" y="700" width="160" height="56" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1170.0" y="725.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >ReportRenderer</text>
+<text x="1170.0" y="742.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >PDFReportRenderer</text>
+<rect x="210" y="700" width="160" height="56" rx="3" fill="#fff" stroke="#444" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="290.0" y="725.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >Mock repositories</text>
+<text x="290.0" y="742.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >MoveInProofTests</text>
+<text x="290.0" y="778" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >20 unit tests replace the</text>
+<text x="290.0" y="793" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >real implementations</text>
+<rect x="386" y="885" width="512" height="44" rx="3" fill="#fff" stroke="#1F6F64" stroke-width="2"/>
+<text x="642.0" y="904.0" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="middle" >SwiftData store (ModelContainer)</text>
+<text x="642.0" y="921.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >Tenancy, Room, Photo, Issue</text>
+<rect x="914" y="885" width="160" height="44" rx="3" fill="#fff" stroke="#1F6F64" stroke-width="2"/>
+<text x="994.0" y="904.0" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="middle" >Photos folder</text>
+<text x="994.0" y="921.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >JPEG, file protection</text>
+<rect x="1090" y="885" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1170.0" y="904.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >ConditionReportPDF</text>
+<text x="1170.0" y="921.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >UIKit, share sheet / Files</text>
+<rect x="210" y="885" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="290.0" y="904.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >AVFoundation</text>
+<text x="290.0" y="921.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >back camera</text>
+<rect x="562" y="970" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="642.0" y="997.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >WidgetSync</text>
+<rect x="738" y="970" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="818.0" y="989.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >App Group</text>
+<text x="818.0" y="1006.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >UserDefaults snapshot</text>
+<rect x="914" y="970" width="160" height="44" rx="3" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="994.0" y="989.0" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >Widget extension</text>
+<text x="994.0" y="1006.0" font-size="11.5" font-weight="normal" fill="#777" text-anchor="middle" >WidgetKit</text>
+<path d="M 466.0,179 L 466.0,192 L 378,192 L 378,300 L 466.0,300 L 466.0,320" fill="none" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 466.0,364 L 466.0,377 L 378,377 L 378,488 L 466.0,488 L 466.0,505" fill="none" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 466.0,619 L 466.0,700" fill="none" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 466.0,756 L 466.0,885" fill="none" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 1170.0,619 L 1170.0,700" fill="none" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 1170.0,756 L 1170.0,885" fill="none" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 290.0,885 L 290.0,830 L 554,830 L 554,342 L 562,342" fill="none" stroke="#999" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 818.0,179 L 818.0,320" fill="none" stroke="#1F6F64" stroke-width="2" marker-end="url(#acc)"/>
+<text x="826.0" y="270" font-size="12.5" fill="#1F6F64" text-anchor="start" font-style="italic">1  tap shutter</text>
+<path d="M 818.0,364 L 818.0,505" fill="none" stroke="#1F6F64" stroke-width="2" marker-end="url(#acc)"/>
+<text x="826.0" y="455" font-size="12.5" fill="#1F6F64" text-anchor="start" font-style="italic">2  takePhoto()</text>
+<path d="M 818.0,549 L 818.0,700" fill="none" stroke="#1F6F64" stroke-width="2" marker-end="url(#acc)"/>
+<text x="826.0" y="640" font-size="12.5" fill="#1F6F64" text-anchor="start" font-style="italic">3  add records</text>
+<path d="M 898,527 L 906,527 L 906,662 L 994.0,662 L 994.0,700" fill="none" stroke="#1F6F64" stroke-width="2" marker-end="url(#acc)"/>
+<text x="1002.0" y="690" font-size="12.5" fill="#1F6F64" text-anchor="start" font-style="italic">3  save JPEG</text>
+<path d="M 818.0,756 L 818.0,885" fill="none" stroke="#1F6F64" stroke-width="2" marker-end="url(#acc)"/>
+<text x="826.0" y="830" font-size="12.5" fill="#1F6F64" text-anchor="start" font-style="italic">4  saveChanges()</text>
+<path d="M 994.0,756 L 994.0,885" fill="none" stroke="#1F6F64" stroke-width="2" marker-end="url(#acc)"/>
+<path d="M 758,885 L 758,865 L 730,865 L 730,200 L 752,200 L 752,180" fill="none" stroke="#1F6F64" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#acc)"/>
+<text x="722" y="290" font-size="12.5" fill="#1F6F64" text-anchor="end" font-style="italic">5  changes observed</text>
+<path d="M 642.0,929 L 642.0,970" fill="none" stroke="#444" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#arr)"/>
+<text x="648.0" y="962" font-size="12.5" fill="#777" text-anchor="start" font-style="italic">on save</text>
+<path d="M 722,992.0 L 738,992.0" fill="none" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M 898,992.0 L 914,992.0" fill="none" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<text x="1320" y="125" font-size="17" font-weight="bold" fill="#222" text-anchor="start" >Taking a photo</text>
+<text x="1320" y="152" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="start" >1.</text>
+<text x="1340" y="152" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >CaptureView sends the tap to CaptureViewModel.</text>
+<text x="1320" y="173" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="start" >2.</text>
+<text x="1340" y="173" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >The ViewModel captures the image with CameraController,</text>
+<text x="1340" y="194" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >stamps the date and time on it and calls CapturePhoto.</text>
+<text x="1320" y="215" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="start" >3.</text>
+<text x="1340" y="215" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >CapturePhoto saves the JPEG through PhotoFileStorage and</text>
+<text x="1340" y="236" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >adds the Photo (and an Issue if tagged) through</text>
+<text x="1340" y="257" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >InspectionRepository.</text>
+<text x="1320" y="278" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="start" >4.</text>
+<text x="1340" y="278" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >saveChanges() commits to SwiftData. If that fails the</text>
+<text x="1340" y="299" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >JPEG is deleted and MoveInError.storageFailed is thrown.</text>
+<text x="1320" y="320" font-size="13.5" font-weight="bold" fill="#1F6F64" text-anchor="start" >5.</text>
+<text x="1340" y="320" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >SwiftData observation updates the screen. Errors are</text>
+<text x="1340" y="341" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >shown as an alert by the ViewModel.</text>
+<text x="1340" y="362" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >WidgetSync also writes a snapshot for the widget.</text>
+<text x="1320" y="405" font-size="17" font-weight="bold" fill="#222" text-anchor="start" >Data model</text>
+<rect x="1320" y="423" width="92" height="34" rx="2" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1366" y="445" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >Tenancy</text>
+<rect x="1460" y="423" width="92" height="34" rx="2" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1506" y="445" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >Room</text>
+<rect x="1600" y="423" width="92" height="34" rx="2" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1646" y="445" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >Photo</text>
+<rect x="1460" y="497" width="92" height="34" rx="2" fill="#fff" stroke="#444" stroke-width="1.2"/>
+<text x="1506" y="519" font-size="13.5" font-weight="normal" fill="#222" text-anchor="middle" >Issue</text>
+<line x1="1412" y1="440" x2="1460" y2="440" stroke="#444" stroke-width="1.2"/>
+<line x1="1552" y1="440" x2="1600" y2="440" stroke="#444" stroke-width="1.2"/>
+<line x1="1506" y1="457" x2="1506" y2="497" stroke="#444" stroke-width="1.2"/>
+<polyline points="1552,514 1646,514 1646,457" fill="none" stroke="#444" stroke-width="1.2"/>
+<text x="1416" y="435" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >1</text>
+<text x="1448" y="435" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >*</text>
+<text x="1556" y="435" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >1</text>
+<text x="1588" y="435" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >*</text>
+<text x="1510" y="470" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >1</text>
+<text x="1510" y="493" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >*</text>
+<text x="1556" y="509" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >1</text>
+<text x="1650" y="469" font-size="12" font-weight="normal" fill="#777" text-anchor="start" >*</text>
+<text x="1320" y="555" font-size="12.5" font-weight="normal" fill="#777" text-anchor="start" >Deleting a room cascades to its photos and issues.</text>
+<text x="1320" y="572" font-size="12.5" font-weight="normal" fill="#777" text-anchor="start" >Deleting an issue keeps its photos.</text>
+<text x="1320" y="613" font-size="17" font-weight="bold" fill="#222" text-anchor="start" >Notes</text>
+<text x="1320" y="637" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >Each layer only calls the one below it.</text>
+<text x="1320" y="657" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >Views never import SwiftData; use cases only</text>
+<text x="1320" y="677" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >see repository protocols.</text>
+<text x="1320" y="697" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >UI state runs on the main actor; the camera</text>
+<text x="1320" y="717" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >session has its own serial queue.</text>
+<text x="1320" y="737" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >No network access. The widget reads a copy of</text>
+<text x="1320" y="757" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >the key dates from the App Group.</text>
+<text x="1320" y="797" font-size="17" font-weight="bold" fill="#222" text-anchor="start" >Key</text>
+<line x1="1320" y1="815" x2="1360" y2="815" stroke="#444" stroke-width="1.2" marker-end="url(#arr)"/>
+<text x="1372" y="819" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >calls / depends on</text>
+<line x1="1320" y1="837" x2="1360" y2="837" stroke="#1F6F64" stroke-width="2" marker-end="url(#acc)"/>
+<text x="1372" y="841" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >path traced above</text>
+<line x1="1320" y1="859" x2="1360" y2="859" stroke="#444" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#arr)"/>
+<text x="1372" y="863" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >notification / observation</text>
+<rect x="1320" y="871" width="40" height="18" fill="#fff" stroke="#444" stroke-dasharray="5 4"/>
+<text x="1372" y="885" font-size="13.5" font-weight="normal" fill="#222" text-anchor="start" >wiring or test-only component</text>
+</svg>
+</body></html>
