@@ -5,13 +5,11 @@ import WidgetKit
 
 struct TenancyEntry: TimelineEntry {
     var date: Date
-    var reportDue: Date
-    var leaseEnds: Date
-    var moveOutInspection: Date?
-    var issuesFlagged: Int
+    /// Nil until the tenancy has been set up in the app.
+    var tenancy: TenancySnapshot?
 
-    var reportDaysLeft: Int { daysBetween(date, reportDue) }
-    var leaseDaysLeft: Int { daysBetween(date, leaseEnds) }
+    var reportDaysLeft: Int { tenancy.map { daysBetween(date, $0.reportDue) } ?? 0 }
+    var leaseDaysLeft: Int { tenancy.map { daysBetween(date, $0.leaseEnd) } ?? 0 }
 
     private func daysBetween(_ start: Date, _ end: Date) -> Int {
         let calendar = Calendar.current
@@ -19,17 +17,26 @@ struct TenancyEntry: TimelineEntry {
         return max(days, 0)
     }
 
-    /// Placeholder tenancy matching the mockups.
-    /// TODO: Read the real tenancy from an App Group shared with the app.
+    /// The tenancy the app last saved.
+    static func current(at date: Date = .now) -> TenancyEntry {
+        TenancyEntry(date: date, tenancy: TenancySnapshot.load())
+    }
+
+    /// Example tenancy matching the mockups, for the widget gallery and previews.
     static func sample(at date: Date = .now) -> TenancyEntry {
         let calendar = Calendar.current
-        return TenancyEntry(
-            date: date,
-            reportDue: calendar.date(from: DateComponents(year: 2026, month: 10, day: 26)) ?? date,
-            leaseEnds: calendar.date(from: DateComponents(year: 2027, month: 10, day: 18)) ?? date,
+        let tenancy = TenancySnapshot(
+            streetAddress: "Unit 7, 42 Carlisle Street",
+            reportDue: calendar.date(byAdding: .day, value: 7, to: date) ?? date,
+            leaseEnd: calendar.date(byAdding: .day, value: 364, to: date) ?? date,
             moveOutInspection: nil,
             issuesFlagged: 3
         )
+        return TenancyEntry(date: date, tenancy: tenancy)
+    }
+
+    static func notSetUp(at date: Date = .now) -> TenancyEntry {
+        TenancyEntry(date: date, tenancy: nil)
     }
 }
 
@@ -39,14 +46,17 @@ struct TenancyProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TenancyEntry) -> Void) {
-        completion(.sample())
+        // In the widget gallery, show the example rather than an empty widget.
+        let entry = TenancyEntry.current()
+        completion(context.isPreview && entry.tenancy == nil ? .sample() : entry)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TenancyEntry>) -> Void) {
-        // Day counts only change at midnight, so refresh then.
+        // Day counts only change at midnight, so refresh then. The app also asks for
+        // a refresh whenever the tenancy changes.
         let now = Date.now
         let nextMidnight = Calendar.current.nextDate(after: now, matching: DateComponents(hour: 0), matchingPolicy: .nextTime) ?? now.addingTimeInterval(3600)
-        completion(Timeline(entries: [.sample(at: now)], policy: .after(nextMidnight)))
+        completion(Timeline(entries: [.current(at: now)], policy: .after(nextMidnight)))
     }
 }
 
@@ -71,10 +81,37 @@ struct TenancyWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        switch family {
-        case .systemMedium: LeaseWidgetView(entry: entry)
-        default: ReportDueWidgetView(entry: entry)
+        if let tenancy = entry.tenancy {
+            switch family {
+            case .systemMedium: LeaseWidgetView(entry: entry, tenancy: tenancy)
+            default: ReportDueWidgetView(entry: entry, tenancy: tenancy)
+            }
+        } else {
+            NotSetUpWidgetView()
         }
+    }
+}
+
+// MARK: - Not set up yet
+
+private struct NotSetUpWidgetView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Image(systemName: "house")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(WidgetTheme.brand, in: .rect(cornerRadius: 7))
+            Spacer(minLength: 0)
+            Text("Add your tenancy")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(WidgetTheme.textPrimary)
+            Text("Open MoveIn Proof to track your key dates.")
+                .font(.system(size: 14))
+                .foregroundStyle(WidgetTheme.textSecondary)
+                .padding(.top, 2)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 }
 
@@ -82,6 +119,7 @@ struct TenancyWidgetView: View {
 
 private struct ReportDueWidgetView: View {
     var entry: TenancyEntry
+    var tenancy: TenancySnapshot
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -110,7 +148,7 @@ private struct ReportDueWidgetView: View {
 
             Spacer(minLength: 4)
 
-            Text(entry.reportDue.widgetFormatted(includeYear: true))
+            Text(tenancy.reportDue.widgetFormatted(includeYear: true))
                 .font(.system(size: 14))
                 .foregroundStyle(WidgetTheme.textSecondary)
                 .lineLimit(1)
@@ -124,6 +162,7 @@ private struct ReportDueWidgetView: View {
 
 private struct LeaseWidgetView: View {
     var entry: TenancyEntry
+    var tenancy: TenancySnapshot
 
     var body: some View {
         HStack(spacing: 16) {
@@ -142,7 +181,7 @@ private struct LeaseWidgetView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(WidgetTheme.textPrimary)
                 Spacer(minLength: 4)
-                Text(entry.leaseEnds.widgetFormatted(includeYear: true))
+                Text(tenancy.leaseEnd.widgetFormatted(includeYear: true))
                     .font(.system(size: 14))
                     .foregroundStyle(WidgetTheme.textSecondary)
                     .lineLimit(1)
@@ -155,11 +194,11 @@ private struct LeaseWidgetView: View {
                 .frame(width: 1)
 
             VStack(alignment: .leading, spacing: 0) {
-                SummaryItem(label: "Report due", value: entry.reportDue.widgetFormatted(includeYear: false), valueColor: WidgetTheme.warning)
+                SummaryItem(label: "Report due", value: tenancy.reportDue.widgetFormatted(includeYear: false), valueColor: WidgetTheme.warning)
                 Spacer(minLength: 4)
-                SummaryItem(label: "Move-out inspection", value: entry.moveOutInspection?.widgetFormatted(includeYear: false) ?? "Not booked")
+                SummaryItem(label: "Move-out inspection", value: tenancy.moveOutInspection?.widgetFormatted(includeYear: false) ?? "Not booked")
                 Spacer(minLength: 4)
-                SummaryItem(label: "Issues flagged", value: "\(entry.issuesFlagged)")
+                SummaryItem(label: "Issues flagged", value: "\(tenancy.issuesFlagged)")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
@@ -206,4 +245,10 @@ private extension Date {
     TenancyWidget()
 } timeline: {
     TenancyEntry.sample()
+}
+
+#Preview("Not set up", as: .systemSmall) {
+    TenancyWidget()
+} timeline: {
+    TenancyEntry.notSetUp()
 }

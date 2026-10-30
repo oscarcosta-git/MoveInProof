@@ -4,12 +4,9 @@ import UIKit
 /// then a section per room with its flagged issues and timestamped photos.
 struct ConditionReportPDF {
     var tenancy: Tenancy
+    var rooms: [Room]
     var includePhotos: Bool
     var flaggedOnly: Bool
-
-    var rooms: [Room] {
-        tenancy.sortedRooms.filter { flaggedOnly ? !$0.issues.isEmpty : !$0.photos.isEmpty }
-    }
 
     /// Writes the PDF to a temporary file and returns its URL.
     func write() throws -> URL {

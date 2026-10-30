@@ -18,6 +18,13 @@
 			remoteGlobalIDString = 4D1A00000000000000000106;
 			remoteInfo = MoveInProofWidgetsExtension;
 		};
+		4D1A00000000000000000302 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4D1A0000000000000000000A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D1A00000000000000000006;
+			remoteInfo = MoveInProof;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,6 +44,7 @@
 /* Begin PBXFileReference section */
 		4D1A00000000000000000001 /* MoveInProof.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MoveInProof.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D1A00000000000000000100 /* MoveInProofWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MoveInProofWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D1A00000000000000000301 /* MoveInProofTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MoveInProofTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -44,15 +52,31 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				MoveInProofWidgets.entitlements,
 			);
 			target = 4D1A00000000000000000106 /* MoveInProofWidgetsExtension */;
+		};
+		4D1A00000000000000000202 /* Exceptions for "MoveInProof" folder in "MoveInProof" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				MoveInProof.entitlements,
+			);
+			target = 4D1A00000000000000000006 /* MoveInProof */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4D1A00000000000000000002 /* MoveInProof */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4D1A00000000000000000202 /* Exceptions for "MoveInProof" folder in "MoveInProof" target */,
+			);
 			path = MoveInProof;
+			sourceTree = "<group>";
+		};
+		4D1A00000000000000000201 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		4D1A00000000000000000105 /* MoveInProofWidgets */ = {
@@ -61,6 +85,11 @@
 				4D1A00000000000000000104 /* Exceptions for "MoveInProofWidgets" folder in "MoveInProofWidgetsExtension" target */,
 			);
 			path = MoveInProofWidgets;
+			sourceTree = "<group>";
+		};
+		4D1A00000000000000000300 /* MoveInProofTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MoveInProofTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -80,6 +109,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4D1A00000000000000000304 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -88,6 +124,8 @@
 			children = (
 				4D1A00000000000000000002 /* MoveInProof */,
 				4D1A00000000000000000105 /* MoveInProofWidgets */,
+				4D1A00000000000000000201 /* Shared */,
+				4D1A00000000000000000300 /* MoveInProofTests */,
 				4D1A00000000000000000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -97,6 +135,7 @@
 			children = (
 				4D1A00000000000000000001 /* MoveInProof.app */,
 				4D1A00000000000000000100 /* MoveInProofWidgetsExtension.appex */,
+				4D1A00000000000000000301 /* MoveInProofTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -118,6 +157,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				4D1A00000000000000000105 /* MoveInProofWidgets */,
+				4D1A00000000000000000201 /* Shared */,
 			);
 			name = MoveInProofWidgetsExtension;
 			packageProductDependencies = (
@@ -142,6 +182,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				4D1A00000000000000000002 /* MoveInProof */,
+				4D1A00000000000000000201 /* Shared */,
 			);
 			name = MoveInProof;
 			packageProductDependencies = (
@@ -149,6 +190,29 @@
 			productName = MoveInProof;
 			productReference = 4D1A00000000000000000001 /* MoveInProof.app */;
 			productType = "com.apple.product-type.application";
+		};
+		4D1A00000000000000000307 /* MoveInProofTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D1A0000000000000000030A /* Build configuration list for PBXNativeTarget "MoveInProofTests" */;
+			buildPhases = (
+				4D1A00000000000000000305 /* Sources */,
+				4D1A00000000000000000304 /* Frameworks */,
+				4D1A00000000000000000306 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4D1A00000000000000000303 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4D1A00000000000000000300 /* MoveInProofTests */,
+			);
+			name = MoveInProofTests;
+			packageProductDependencies = (
+			);
+			productName = MoveInProofTests;
+			productReference = 4D1A00000000000000000301 /* MoveInProofTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -165,6 +229,10 @@
 					};
 					4D1A00000000000000000106 = {
 						CreatedOnToolsVersion = 27.0;
+					};
+					4D1A00000000000000000307 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = 4D1A00000000000000000006;
 					};
 				};
 			};
@@ -184,6 +252,7 @@
 			targets = (
 				4D1A00000000000000000006 /* MoveInProof */,
 				4D1A00000000000000000106 /* MoveInProofWidgetsExtension */,
+				4D1A00000000000000000307 /* MoveInProofTests */,
 			);
 		};
 /* End PBXProject section */
@@ -197,6 +266,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4D1A00000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D1A00000000000000000306 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -220,6 +296,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4D1A00000000000000000305 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -228,12 +311,18 @@
 			target = 4D1A00000000000000000106 /* MoveInProofWidgetsExtension */;
 			targetProxy = 4D1A00000000000000000102 /* PBXContainerItemProxy */;
 		};
+		4D1A00000000000000000303 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D1A00000000000000000006 /* MoveInProof */;
+			targetProxy = 4D1A00000000000000000302 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4D1A0000000000000000010C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MoveInProofWidgets/MoveInProofWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -258,6 +347,7 @@
 		4D1A0000000000000000010D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MoveInProofWidgets/MoveInProofWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -332,6 +422,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MoveInProof/MoveInProof.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
@@ -362,6 +453,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MoveInProof/MoveInProof.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
@@ -384,6 +476,44 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		4D1A00000000000000000308 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.oscarcosta.MoveInProofTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MoveInProof.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MoveInProof";
+			};
+			name = Debug;
+		};
+		4D1A00000000000000000309 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.oscarcosta.MoveInProofTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MoveInProof.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MoveInProof";
 			};
 			name = Release;
 		};
@@ -413,6 +543,15 @@
 			buildConfigurations = (
 				4D1A0000000000000000000C /* Debug */,
 				4D1A0000000000000000000D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D1A0000000000000000030A /* Build configuration list for PBXNativeTarget "MoveInProofTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D1A00000000000000000308 /* Debug */,
+				4D1A00000000000000000309 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

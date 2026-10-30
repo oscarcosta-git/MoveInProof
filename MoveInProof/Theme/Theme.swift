@@ -34,10 +34,11 @@ enum Theme {
 }
 
 extension Font {
-    static let screenTitle = Font.system(size: 36, weight: .bold)
-    static let cardTitle = Font.system(size: 19, weight: .semibold)
-    static let rowTitle = Font.system(size: 17, weight: .semibold)
-    static let rowSubtitle = Font.system(size: 15)
+    // Built-in text styles, so they follow the user's Dynamic Type setting.
+    static let screenTitle = Font.largeTitle.bold()
+    static let cardTitle = Font.title3.weight(.semibold)
+    static let rowTitle = Font.headline
+    static let rowSubtitle = Font.subheadline
 }
 
 extension Color {
