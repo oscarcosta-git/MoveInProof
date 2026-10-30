@@ -4,7 +4,7 @@ struct IssueDetailView: View {
     @State private var viewModel: IssueDetailViewModel
 
     @Environment(\.dismiss) private var dismiss
-    @State private var isChangingSuggestion = false
+    @State private var isChangingType = false
     @State private var isConfirmingDelete = false
 
     init(viewModel: IssueDetailViewModel) {
@@ -22,7 +22,11 @@ struct IssueDetailView: View {
                     if let photo {
                         Color.clear.overlay { PhotoThumbnail(fileName: photo.fileName) }
                     } else {
-                        BenchtopPhoto(flagExisting: true)
+                        Theme.surfaceSunken.overlay {
+                            Label("No photo", systemImage: "photo")
+                                .scaledFont(15, weight: .semibold)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
                     }
                 }
                 .frame(height: 220)
@@ -40,7 +44,10 @@ struct IssueDetailView: View {
                         .foregroundStyle(Theme.textSecondary)
                 }
 
-                suggestionCard
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionLabel("Damage type")
+                    damageTypeRow
+                }
 
                 VStack(alignment: .leading, spacing: 10) {
                     SectionLabel("Severity")
@@ -85,48 +92,37 @@ struct IssueDetailView: View {
         } message: {
             Text("Its photos stay in the room.")
         }
-        .confirmationDialog("What kind of damage is it?", isPresented: $isChangingSuggestion, titleVisibility: .visible) {
-            ForEach(SampleData.suggestionOptions, id: \.self) { option in
+        .confirmationDialog("What kind of damage is it?", isPresented: $isChangingType, titleVisibility: .visible) {
+            ForEach(SampleData.damageTypes, id: \.self) { option in
                 Button(option.capitalized) { viewModel.changeKind(to: option) }
             }
         }
         .errorAlert($viewModel.errorMessage)
     }
 
-    private var suggestionCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 14) {
-                Image(systemName: draft.isKindConfirmed ? "checkmark.circle.fill" : "sparkle")
-                    .scaledFont(20, weight: .semibold)
-                    .foregroundStyle(Theme.brand)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(draft.isKindConfirmed ? "Marked as \(draft.kind)" : "Suggested: \(draft.kind)")
-                        .scaledFont(19, weight: .semibold)
-                        .foregroundStyle(Theme.brandStrong)
-                    Text("Found on this iPhone. Your photos stay on your device.")
-                        .scaledFont(15)
-                        .foregroundStyle(Theme.textSecondary)
-                }
-                Spacer(minLength: 0)
-                if draft.isKindConfirmed {
-                    Button("Change") { isChangingSuggestion = true }
-                        .scaledFont(15, weight: .semibold)
-                        .foregroundStyle(Theme.brandStrong)
-                }
+    /// The damage type the tenant tagged. Tap to change it.
+    private var damageTypeRow: some View {
+        Button { isChangingType = true } label: {
+            HStack(spacing: 12) {
+                Text(Issue.displayName(forType: draft.kind))
+                    .scaledFont(17, weight: .semibold)
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer(minLength: 8)
+                Text("Change")
+                    .scaledFont(15, weight: .semibold)
+                    .foregroundStyle(Theme.brandStrong)
+                Image(systemName: "chevron.up.chevron.down")
+                    .scaledFont(13, weight: .semibold)
+                    .foregroundStyle(Theme.brandStrong)
             }
-
-            if !draft.isKindConfirmed {
-                HStack(spacing: 14) {
-                    Button("Confirm") { withAnimation { viewModel.confirmKind() } }
-                        .buttonStyle(.primary)
-                    Button("Change") { isChangingSuggestion = true }
-                        .buttonStyle(.secondary)
-                }
-            }
+            .padding(.horizontal, 18)
+            .frame(maxWidth: .infinity, minHeight: 56)
+            .contentShape(.rect)
         }
-        .padding(20)
-        .background(Theme.brandTint, in: .rect(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.brand.opacity(0.25), lineWidth: 1))
+        .buttonStyle(.plain)
+        .card()
+        .accessibilityLabel("Damage type: \(Issue.displayName(forType: draft.kind))")
+        .accessibilityHint("Changes the type of damage")
     }
 }
 

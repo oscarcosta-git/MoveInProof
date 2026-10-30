@@ -98,7 +98,7 @@ struct CompareView: View {
                                 Text(issue.title)
                                     .font(.rowTitle)
                                     .foregroundStyle(Theme.textPrimary)
-                                Text("\(issue.suggestion.capitalized), flagged at move-in")
+                                Text("\(issue.typeName), flagged at move-in")
                                     .font(.rowSubtitle)
                                     .foregroundStyle(Theme.textSecondary)
                             }

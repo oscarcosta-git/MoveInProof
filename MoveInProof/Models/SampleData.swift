@@ -6,23 +6,28 @@ enum SampleData {
     static let defaultRoomNames = ["Entry and hallway", "Living room", "Kitchen", "Bedroom 1", "Bathroom", "Bedroom 2", "Laundry", "Balcony"]
     static let captureLocations = ["North wall", "East wall", "South wall", "West wall", "Floor", "Ceiling"]
     static let captureTags = ["Scuff", "Crack", "Stain", "More"]
-    static let suggestionOptions = ["chip or scratch", "scuff", "crack", "stain", "dent", "wear and tear"]
+    static let damageTypes = ["chip or scratch", "scuff", "crack", "stain", "dent", "wear and tear", "damage"]
 
     /// Fills the store with the tenancy from the mockups.
     /// `withPhotoFiles` renders a placeholder image for each photo; previews skip it to stay fast.
     @discardableResult
     static func seed(into context: ModelContext, withPhotoFiles: Bool = true) -> Tenancy {
+        // Dates are relative to today so the sample always looks current: moved in four days ago,
+        // photographed yesterday afternoon, condition report due in three days.
         let calendar = Calendar.current
-        func date(_ year: Int, _ month: Int, _ day: Int, _ hour: Int = 0, _ minute: Int = 0) -> Date {
-            calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour, minute: minute)) ?? .now
+        let today = calendar.startOfDay(for: .now)
+        func day(_ offset: Int, hour: Int = 0) -> Date {
+            let date = calendar.date(byAdding: .day, value: offset, to: today) ?? today
+            return calendar.date(byAdding: .hour, value: hour, to: date) ?? date
         }
+        let leaseStart = day(-4)
 
         let tenancy = Tenancy(
             streetAddress: "Unit 7, 42 Carlisle Street",
             suburb: "Newtown NSW 2042",
-            leaseStart: date(2026, 10, 19),
-            leaseEnd: date(2027, 10, 18),
-            reportDue: date(2026, 10, 26)
+            leaseStart: leaseStart,
+            leaseEnd: calendar.date(byAdding: DateComponents(year: 1, day: -1), to: leaseStart) ?? leaseStart,
+            reportDue: day(3)
         )
         context.insert(tenancy)
 
@@ -34,7 +39,7 @@ enum SampleData {
             room.tenancy = tenancy
 
             for n in 0..<photoCounts[index] {
-                let capturedAt = date(2026, 10, 22, 15, 0).addingTimeInterval(Double(index * 600 + n * 40))
+                let capturedAt = day(-1, hour: 15).addingTimeInterval(Double(index * 600 + n * 40))
                 let fileName = withPhotoFiles
                     ? (PhotoStore.renderPlaceholderPhoto(at: capturedAt, size: CGSize(width: 450, height: 600)).flatMap { try? PhotoStore.save($0) } ?? "")
                     : ""

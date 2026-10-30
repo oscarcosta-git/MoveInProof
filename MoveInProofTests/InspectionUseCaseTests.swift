@@ -69,7 +69,7 @@ struct InspectionUseCaseTests {
     func issueTitleIsRequired() throws {
         let issue = try FlagIssueUseCase(repository: repository).execute(photo: fixtures.photo(in: room), in: room)
         let originalTitle = issue.title
-        let draft = IssueDraft(title: "  ", kind: "crack", isKindConfirmed: true, severity: .major, notes: "")
+        let draft = IssueDraft(title: "  ", kind: "crack", severity: .major, notes: "")
 
         #expect(throws: MoveInError.missingIssueTitle) {
             try UpdateIssueUseCase(repository: repository).execute(issue, with: draft)

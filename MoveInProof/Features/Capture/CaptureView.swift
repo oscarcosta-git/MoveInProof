@@ -30,11 +30,7 @@ struct CaptureView: View {
         .statusBarHidden()
         // Camera controls sit around a fixed viewfinder; cap their growth so it stays usable.
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
-        .task {
-            await camera.start()
-            // The placeholder scene has a scuff drawn on it, so suggest one like detection would.
-            if camera.status == .unavailable { viewModel.selectedTag = "Scuff" }
-        }
+        .task { await camera.start() }
         .onDisappear { camera.stop() }
         .errorAlert($viewModel.errorMessage)
     }
@@ -87,7 +83,8 @@ struct CaptureView: View {
                             .transition(.scale(scale: 1.4).combined(with: .opacity))
                     }
                 case .unavailable:
-                    placeholderScene(size: geo.size)
+                    // No camera (the Simulator): show a drawn wall, which is saved like a photo.
+                    WallScene()
                 case .denied:
                     cameraMessage(
                         icon: "camera.fill",
@@ -99,6 +96,14 @@ struct CaptureView: View {
                     cameraMessage(icon: "exclamationmark.triangle.fill", title: "The camera couldn't start", detail: "Close this screen and try again.")
                 case .starting:
                     ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+
+                if canCapture, let tag = viewModel.selectedTag {
+                    flagBanner(for: tag)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 14)
+                        .allowsHitTesting(false)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
                 if canCapture {
@@ -118,25 +123,14 @@ struct CaptureView: View {
         .clipShape(.rect(cornerRadius: 26))
     }
 
-    /// The drawn wall with the mock detection overlay from the mockups.
-    private func placeholderScene(size: CGSize) -> some View {
-        let w = size.width
-        let h = size.height
-        return ZStack(alignment: .topLeading) {
-            WallScene()
-            if let selectedTag = viewModel.selectedTag {
-                Label("Possible \(selectedTag == "More" ? "damage" : selectedTag.lowercased())", systemImage: "sparkle")
-                    .scaledFont(15, weight: .semibold)
-                    .foregroundStyle(Theme.onMint)
-                    .padding(.horizontal, 12)
-                    .frame(minHeight: 34)
-                    .background(Theme.mint, in: .rect(cornerRadius: 8))
-                    .offset(x: w * 0.53, y: h * 0.497)
-                DetectionBox()
-                    .frame(width: w * 0.4, height: h * 0.146)
-                    .offset(x: w * 0.49, y: h * 0.555)
-            }
-        }
+    /// Says plainly that the tag the user picked will flag the next shot as an issue.
+    private func flagBanner(for tag: String) -> some View {
+        Label("Next photo will be flagged: \(tag == "More" ? "damage" : tag.lowercased())", systemImage: "exclamationmark.circle.fill")
+            .scaledFont(15, weight: .semibold)
+            .foregroundStyle(Theme.onMint)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(Theme.mint, in: .capsule)
     }
 
     private func cameraMessage(icon: String, title: String, detail: String, action: (String, () -> Void)? = nil) -> some View {
@@ -171,7 +165,7 @@ struct CaptureView: View {
                 ForEach(SampleData.captureTags, id: \.self) { tag in
                     let isSelected = viewModel.selectedTag == tag
                     Button {
-                        viewModel.toggleTag(tag)
+                        withAnimation(.snappy) { viewModel.toggleTag(tag) }
                     } label: {
                         HStack(spacing: 6) {
                             if isSelected {
