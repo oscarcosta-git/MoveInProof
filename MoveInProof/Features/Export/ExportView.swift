@@ -60,6 +60,7 @@ struct ExportView: View {
         }
         .background(Theme.background)
         .toolbar(.hidden, for: .navigationBar)
+        .statusBarBackground()
         .sheet(item: $sharedFile) { file in
             ShareSheet(url: file.url)
                 .ignoresSafeArea()
@@ -106,6 +107,7 @@ private struct ToggleRow: View {
         }
         .tint(Theme.brand)
         .padding(.horizontal, 20)
+        .padding(.vertical, 12)
         .frame(minHeight: 76)
     }
 }

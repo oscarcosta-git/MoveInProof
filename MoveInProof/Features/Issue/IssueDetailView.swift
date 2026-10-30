@@ -33,10 +33,10 @@ struct IssueDetailView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     TextField("Where is it?", text: $viewModel.draft.title, axis: .vertical)
-                        .font(.system(size: 26, weight: .bold))
+                        .scaledFont(26, weight: .bold)
                         .foregroundStyle(Theme.textPrimary)
                     Text(viewModel.subtitle)
-                        .font(.system(size: 17))
+                        .scaledFont(17)
                         .foregroundStyle(Theme.textSecondary)
                 }
 
@@ -51,7 +51,7 @@ struct IssueDetailView: View {
                     SectionLabel("Notes")
                     TextField("Describe the damage", text: $viewModel.draft.notes, axis: .vertical)
                         .lineLimit(3...8)
-                        .font(.system(size: 17))
+                        .scaledFont(17)
                         .foregroundStyle(Theme.textPrimary)
                         .card(padding: 18)
                 }
@@ -97,20 +97,20 @@ struct IssueDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 14) {
                 Image(systemName: draft.isKindConfirmed ? "checkmark.circle.fill" : "sparkle")
-                    .font(.system(size: 20, weight: .semibold))
+                    .scaledFont(20, weight: .semibold)
                     .foregroundStyle(Theme.brand)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(draft.isKindConfirmed ? "Marked as \(draft.kind)" : "Suggested: \(draft.kind)")
-                        .font(.system(size: 19, weight: .semibold))
+                        .scaledFont(19, weight: .semibold)
                         .foregroundStyle(Theme.brandStrong)
                     Text("Found on this iPhone. Your photos stay on your device.")
-                        .font(.system(size: 15))
+                        .scaledFont(15)
                         .foregroundStyle(Theme.textSecondary)
                 }
                 Spacer(minLength: 0)
                 if draft.isKindConfirmed {
                     Button("Change") { isChangingSuggestion = true }
-                        .font(.system(size: 15, weight: .semibold))
+                        .scaledFont(15, weight: .semibold)
                         .foregroundStyle(Theme.brandStrong)
                 }
             }
@@ -133,16 +133,20 @@ struct IssueDetailView: View {
 private struct SeverityPicker: View {
     @Binding var selection: Severity
     @Namespace private var namespace
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        HStack(spacing: 0) {
+        // Side by side normally; stacked at accessibility text sizes so the labels never break mid-word.
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout(spacing: 0))
+        layout {
             ForEach(Severity.allCases) { level in
                 let isSelected = selection == level
                 Button {
                     withAnimation(.snappy(duration: 0.25)) { selection = level }
                 } label: {
                     Text(level.rawValue)
-                        .font(.system(size: 17, weight: .semibold))
+                        .scaledFont(17, weight: .semibold)
+                        .lineLimit(1)
                         .foregroundStyle(isSelected ? Theme.textPrimary : Theme.textSecondary)
                         .frame(maxWidth: .infinity, minHeight: 50)
                         .background {

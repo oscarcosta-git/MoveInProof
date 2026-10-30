@@ -13,7 +13,7 @@ struct ScreenHeader: View {
                 .foregroundStyle(Theme.textPrimary)
             if let subtitle {
                 Text(subtitle)
-                    .font(.system(size: 17))
+                    .scaledFont(17)
                     .foregroundStyle(Theme.textSecondary)
             }
         }
@@ -28,7 +28,7 @@ struct SectionLabel: View {
 
     var body: some View {
         Text(text.uppercased())
-            .font(.system(size: 14, weight: .semibold))
+            .scaledFont(14, weight: .semibold)
             .tracking(0.8)
             .foregroundStyle(Theme.textSecondary)
             .padding(.leading, 4)
@@ -48,6 +48,15 @@ struct CardModifier: ViewModifier {
 }
 
 extension View {
+    /// Covers the status bar area so scrolling content doesn't run under the clock on screens without a navigation bar.
+    func statusBarBackground() -> some View {
+        overlay(alignment: .top) {
+            Theme.background
+                .ignoresSafeArea(edges: .top)
+                .frame(height: 0)
+        }
+    }
+
     /// Shows a ViewModel's error message as an alert, and clears it when dismissed.
     func errorAlert(_ message: Binding<String?>) -> some View {
         alert(
@@ -110,7 +119,7 @@ struct Pill: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 15, weight: .semibold))
+            .scaledFont(15, weight: .semibold)
             .foregroundStyle(tone.foreground)
             .padding(.horizontal, 14)
             .padding(.vertical, 7)
@@ -126,7 +135,7 @@ struct PrimaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 19, weight: .semibold))
+            .scaledFont(19, weight: .semibold)
             .foregroundStyle(foreground)
             .frame(maxWidth: .infinity, minHeight: 56)
             .background(background, in: .rect(cornerRadius: 16))
@@ -140,7 +149,7 @@ struct SecondaryButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 19, weight: .semibold))
+            .scaledFont(19, weight: .semibold)
             .foregroundStyle(Theme.brandStrong)
             .frame(maxWidth: .infinity, minHeight: height)
             .background(Theme.surface, in: .rect(cornerRadius: 16))
@@ -164,7 +173,7 @@ struct CircleIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 18, weight: .medium))
+                .scaledFont(18, weight: .medium)
                 .foregroundStyle(Theme.textPrimary)
                 .frame(width: 48, height: 48)
                 .background(Theme.surface, in: .circle)
@@ -183,10 +192,10 @@ struct FilterChip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 17, weight: .semibold))
+                .scaledFont(17, weight: .semibold)
                 .foregroundStyle(isSelected ? Theme.onBrand : Theme.textPrimary)
                 .padding(.horizontal, 20)
-                .frame(height: 44)
+                .frame(minHeight: 44)
                 .background(isSelected ? Theme.brand : Theme.surface, in: .capsule)
                 .overlay(Capsule().strokeBorder(isSelected ? .clear : Theme.border, lineWidth: 1))
         }
@@ -201,7 +210,7 @@ struct TimestampLabel: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 14, weight: .semibold))
+            .scaledFont(14, weight: .semibold)
             .foregroundStyle(.white)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)

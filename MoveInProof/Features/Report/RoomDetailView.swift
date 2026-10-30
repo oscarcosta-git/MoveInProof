@@ -58,7 +58,7 @@ struct RoomDetailView: View {
                                         .overlay(alignment: .topTrailing) {
                                             if photo.issue != nil {
                                                 Image(systemName: "exclamationmark.circle.fill")
-                                                    .font(.system(size: 18))
+                                                    .scaledFont(18)
                                                     .foregroundStyle(.white, Theme.danger)
                                                     .padding(6)
                                             }
@@ -133,7 +133,7 @@ private struct IssueRow: View {
             }
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 15, weight: .semibold))
+                .scaledFont(15, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
         }
         .padding(.horizontal, 16)

@@ -28,6 +28,8 @@ struct CaptureView: View {
         .background(Theme.camera.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .statusBarHidden()
+        // Camera controls sit around a fixed viewfinder; cap their growth so it stays usable.
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .task {
             await camera.start()
             // The placeholder scene has a scuff drawn on it, so suggest one like detection would.
@@ -48,15 +50,15 @@ struct CaptureView: View {
             } label: {
                 HStack(spacing: 8) {
                     Text(viewModel.title)
-                        .font(.system(size: 17, weight: .semibold))
+                        .scaledFont(17, weight: .semibold)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 13, weight: .bold))
+                        .scaledFont(13, weight: .bold)
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 18)
-                .frame(height: 48)
+                .frame(minHeight: 48)
                 .background(Theme.cameraControl, in: .capsule)
             }
             Spacer()
@@ -124,10 +126,10 @@ struct CaptureView: View {
             WallScene()
             if let selectedTag = viewModel.selectedTag {
                 Label("Possible \(selectedTag == "More" ? "damage" : selectedTag.lowercased())", systemImage: "sparkle")
-                    .font(.system(size: 15, weight: .semibold))
+                    .scaledFont(15, weight: .semibold)
                     .foregroundStyle(Theme.onMint)
                     .padding(.horizontal, 12)
-                    .frame(height: 34)
+                    .frame(minHeight: 34)
                     .background(Theme.mint, in: .rect(cornerRadius: 8))
                     .offset(x: w * 0.53, y: h * 0.497)
                 DetectionBox()
@@ -140,21 +142,21 @@ struct CaptureView: View {
     private func cameraMessage(icon: String, title: String, detail: String, action: (String, () -> Void)? = nil) -> some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 34))
+                .scaledFont(34)
                 .foregroundStyle(Theme.mint)
             Text(title)
-                .font(.system(size: 20, weight: .semibold))
+                .scaledFont(20, weight: .semibold)
                 .foregroundStyle(.white)
             Text(detail)
-                .font(.system(size: 16))
+                .scaledFont(16)
                 .foregroundStyle(Color(hex: 0xB7BEC9))
                 .multilineTextAlignment(.center)
             if let action {
                 Button(action.0, action: action.1)
-                    .font(.system(size: 17, weight: .semibold))
+                    .scaledFont(17, weight: .semibold)
                     .foregroundStyle(Theme.onMint)
                     .padding(.horizontal, 22)
-                    .frame(height: 46)
+                    .frame(minHeight: 46)
                     .background(Theme.mint, in: .capsule)
                     .padding(.top, 6)
             }
@@ -173,13 +175,13 @@ struct CaptureView: View {
                     } label: {
                         HStack(spacing: 6) {
                             if isSelected {
-                                Image(systemName: "checkmark").font(.system(size: 14, weight: .bold))
+                                Image(systemName: "checkmark").scaledFont(14, weight: .bold)
                             }
-                            Text(tag).font(.system(size: 17, weight: .semibold))
+                            Text(tag).scaledFont(17, weight: .semibold)
                         }
                         .foregroundStyle(isSelected ? Theme.onMint : .white)
                         .padding(.horizontal, 18)
-                        .frame(height: 50)
+                        .frame(minHeight: 50)
                         .background(isSelected ? Theme.mint : Theme.cameraControl, in: .capsule)
                     }
                 }
@@ -198,7 +200,7 @@ struct CaptureView: View {
                 .overlay(alignment: .topTrailing) {
                     if viewModel.photoCount > 0 {
                         Text("\(viewModel.photoCount)")
-                            .font(.system(size: 14, weight: .bold))
+                            .scaledFont(14, weight: .bold)
                             .foregroundStyle(Theme.onMint)
                             .frame(minWidth: 28, minHeight: 28)
                             .background(Theme.mint, in: .circle)
@@ -225,10 +227,10 @@ struct CaptureView: View {
                 viewModel.finish()
                 dismiss()
             }
-                .font(.system(size: 19, weight: .semibold))
+                .scaledFont(19, weight: .semibold)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 24)
-                .frame(height: 50)
+                .frame(minHeight: 50)
                 .background(Theme.cameraControl, in: .capsule)
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
@@ -242,7 +244,7 @@ struct CaptureView: View {
     private func cameraIconButton(_ systemName: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 19, weight: .semibold))
+                .scaledFont(19, weight: .semibold)
                 .foregroundStyle(.white)
                 .frame(width: 50, height: 50)
                 .background(Theme.cameraControl, in: .circle)

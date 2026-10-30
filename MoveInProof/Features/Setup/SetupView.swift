@@ -15,12 +15,12 @@ struct SetupView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         Image(systemName: "house")
-                            .font(.system(size: 22, weight: .medium))
+                            .scaledFont(22, weight: .medium)
                             .foregroundStyle(Theme.brand)
                             .frame(width: 54, height: 54)
                             .background(Theme.brandTint, in: .rect(cornerRadius: 14))
                         Text("Set up your tenancy")
-                            .font(.system(size: 28, weight: .bold))
+                            .scaledFont(28, weight: .bold)
                             .foregroundStyle(Theme.textPrimary)
                         Text("Everything stays on this iPhone. You can change these details later.")
                             .font(.rowSubtitle)

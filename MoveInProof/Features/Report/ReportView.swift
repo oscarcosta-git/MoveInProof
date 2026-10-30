@@ -31,6 +31,7 @@ struct ReportView: View {
         .background(Theme.background)
         .navigationTitle("Move-in report")
         .toolbar(.hidden, for: .navigationBar)
+        .statusBarBackground()
         .safeAreaInset(edge: .bottom) {
             if let nextRoom = tenancy.nextRoom {
                 Button {
@@ -60,6 +61,8 @@ private struct RoomRow: View {
     var room: Room
     var status: RoomStatus
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
         HStack(spacing: 16) {
             StatusIndicator(status: status)
@@ -69,19 +72,25 @@ private struct RoomRow: View {
                     .font(.rowTitle)
                     .foregroundStyle(Theme.textPrimary)
                 statusText
+                // At accessibility text sizes the pill moves under the name to leave room for it.
+                if typeSize.isAccessibilitySize, !room.issues.isEmpty {
+                    Pill(text: room.issues.count.counted("issue"), tone: .danger)
+                        .padding(.top, 4)
+                }
             }
 
             Spacer()
 
-            if !room.issues.isEmpty {
+            if !typeSize.isAccessibilitySize, !room.issues.isEmpty {
                 Pill(text: room.issues.count.counted("issue"), tone: .danger)
             }
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 15, weight: .semibold))
+                .scaledFont(15, weight: .semibold)
                 .foregroundStyle(Theme.textTertiary)
         }
         .padding(.horizontal, 20)
+        .padding(.vertical, 10)
         .frame(minHeight: 76)
         .contentShape(.rect)
     }
@@ -95,7 +104,7 @@ private struct RoomRow: View {
                 .foregroundStyle(Theme.textSecondary)
         case .upNext:
             Text(room.photos.isEmpty ? "Up next" : "Up next · \(room.photos.count.counted("photo"))")
-                .font(.system(size: 15, weight: .semibold))
+                .scaledFont(15, weight: .semibold)
                 .foregroundStyle(Theme.brand)
         case .inProgress:
             Text("In progress · \(room.photos.count.counted("photo"))")
@@ -116,7 +125,7 @@ struct StatusIndicator: View {
         switch status {
         case .done:
             Image(systemName: "checkmark")
-                .font(.system(size: 15, weight: .bold))
+                .scaledFont(15, weight: .bold)
                 .foregroundStyle(Theme.onBrand)
                 .frame(width: 32, height: 32)
                 .background(Theme.brand, in: .circle)

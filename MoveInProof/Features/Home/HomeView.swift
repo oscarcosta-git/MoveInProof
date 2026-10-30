@@ -55,6 +55,7 @@ struct HomeView: View {
         }
         .background(Theme.background)
         .toolbar(.hidden, for: .navigationBar)
+        .statusBarBackground()
         .fullScreenCover(item: $capturingRoom) { room in
             CaptureView(viewModel: dependencies.captureViewModel(for: room))
         }
@@ -79,10 +80,10 @@ struct HomeView: View {
                 Button(tenancy.moveOutInspection == nil ? "Add date" : "Change") {
                     isPickingInspectionDate = true
                 }
-                .font(.system(size: 17, weight: .semibold))
+                .scaledFont(17, weight: .semibold)
                 .foregroundStyle(Theme.brandStrong)
                 .padding(.horizontal, 20)
-                .frame(height: 48)
+                .frame(minHeight: 48)
                 .background(Theme.brandTint, in: .capsule)
             }
             KeyDateRow(title: "Lease ends", subtitle: tenancy.leaseEnd.longText) {
@@ -113,24 +114,22 @@ private struct PropertyCard: View {
     var body: some View {
         HStack(spacing: 18) {
             Image(systemName: "house")
-                .font(.system(size: 22, weight: .medium))
+                .scaledFont(22, weight: .medium)
                 .foregroundStyle(Theme.brand)
                 .frame(width: 54, height: 54)
                 .background(Theme.brandTint, in: .rect(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 3) {
                 Text(tenancy.streetAddress)
-                    .font(.system(size: 20, weight: .semibold))
+                    .scaledFont(20, weight: .semibold)
                     .foregroundStyle(Theme.textPrimary)
                 if !tenancy.suburb.isEmpty {
                     Text(tenancy.suburb)
-                        .font(.system(size: 18))
+                        .scaledFont(18)
                         .foregroundStyle(Theme.textSecondary)
                 }
                 Text("Fixed term · \(tenancy.leaseStart.shortText) – \(tenancy.leaseEnd.shortText)")
-                    .font(.system(size: 15))
+                    .scaledFont(15)
                     .foregroundStyle(Theme.textSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
         }
@@ -143,8 +142,14 @@ private struct KeyDateRow<Accessory: View>: View {
     var subtitle: String
     @ViewBuilder var accessory: Accessory
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     var body: some View {
-        HStack {
+        // At accessibility text sizes, stack the button under the text so neither gets squeezed.
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+            : AnyLayout(HStackLayout())
+        layout {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.rowTitle)
@@ -153,9 +158,10 @@ private struct KeyDateRow<Accessory: View>: View {
                     .font(.rowSubtitle)
                     .foregroundStyle(Theme.textSecondary)
             }
-            Spacer()
+            if !typeSize.isAccessibilitySize { Spacer() }
             accessory
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
         .frame(minHeight: 76)
@@ -174,12 +180,12 @@ private struct MoveInProgressCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("MOVE-IN REPORT")
-                .font(.system(size: 14, weight: .semibold))
+                .scaledFont(14, weight: .semibold)
                 .tracking(0.8)
                 .foregroundStyle(Color(hex: 0x9AA4B4))
 
             Text(nextRoomName == nil ? "All rooms done" : "\(completed) of \(total) rooms done")
-                .font(.system(size: 28, weight: .bold))
+                .scaledFont(28, weight: .bold)
                 .foregroundStyle(.white)
 
             GeometryReader { geo in
@@ -195,11 +201,11 @@ private struct MoveInProgressCard: View {
                 Text(photos.counted("photo"))
                 Text("\(issues.counted("issue")) flagged")
             }
-            .font(.system(size: 17))
+            .scaledFont(17)
             .foregroundStyle(Color(hex: 0xD7DCE3))
 
             Label("Stored on this iPhone", systemImage: "lock")
-                .font(.system(size: 17))
+                .scaledFont(17)
                 .foregroundStyle(Color(hex: 0xD7DCE3))
 
             Group {
@@ -213,7 +219,7 @@ private struct MoveInProgressCard: View {
                     }
                 }
             }
-            .font(.system(size: 20, weight: .semibold))
+            .scaledFont(20, weight: .semibold)
             .buttonStyle(PrimaryButtonStyle(background: Theme.mint, foreground: Theme.onMint))
             .padding(.top, 4)
         }
