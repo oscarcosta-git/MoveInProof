@@ -90,14 +90,6 @@ SwiftUI, SwiftData, AVFoundation (camera), WidgetKit, UIKit (PDF rendering, shar
 - **Camera** (`NSCameraUsageDescription`): photographs the condition of each room. If access is denied, the app explains how to turn it on in Settings.
 - **Privacy manifests** (`PrivacyInfo.xcprivacy` in the app and the widget) declare no tracking and no collected data. They list one required-reason API: `UserDefaults` (reason `1C8F.1`) for the App Group shared with the widget.
 
-## Tools
-
-`Tools/MakeAppIcon.swift` renders the 1024×1024 App Store icon:
-
-```bash
-swift Tools/MakeAppIcon.swift MoveInProof/Assets.xcassets/AppIcon.appiconset/AppIcon.png
-```
-
 ## AI assistance declaration
 
 Claude Code (Anthropic) was used as a coding assistant for implementation, refactoring, unit tests and debugging. All code was reviewed and tested, and I remain accountable for everything submitted.

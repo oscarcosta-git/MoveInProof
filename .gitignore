@@ -6,3 +6,6 @@ DerivedData/
 Docs/*
 !Docs/*.pdf
 Marketing/*.md
+
+# Local helper scripts for icons, screenshots and diagrams
+Tools/
