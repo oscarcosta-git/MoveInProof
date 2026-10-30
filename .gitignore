@@ -2,6 +2,7 @@ xcuserdata/
 DerivedData/
 .DS_Store
 
-# Draft sources for the Required Document; only the PDFs are committed
-Docs/*.md
+# Only the finished PDFs of the Required Document are committed
+Docs/*
+!Docs/*.pdf
 Marketing/*.md
