@@ -217,14 +217,3 @@ struct TimestampLabel: View {
             .background(.black.opacity(0.72), in: .rect(cornerRadius: 8))
     }
 }
-
-/// Dashed outline marking a detected or flagged area on a photo.
-struct DetectionBox: View {
-    var color: Color = Theme.mint
-    var cornerRadius: CGFloat = 8
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: cornerRadius)
-            .strokeBorder(color, style: StrokeStyle(lineWidth: 2, dash: [5, 4]))
-    }
-}

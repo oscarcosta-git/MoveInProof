@@ -77,7 +77,9 @@ final class Photo {
 @Model
 final class Issue {
     var title: String
+    /// The damage type the tenant tagged, e.g. "scuff". (Stored as `suggestion` for schema compatibility.)
     var suggestion: String
+    /// Unused; kept so existing stores open without a migration.
     var isSuggestionConfirmed: Bool = false
     var severityRaw: String = Severity.minor.rawValue
     var notes: String = ""
@@ -100,6 +102,13 @@ final class Issue {
     }
 
     var sortedPhotos: [Photo] { photos.sorted { $0.capturedAt < $1.capturedAt } }
+
+    var typeName: String { Self.displayName(forType: suggestion) }
+
+    /// "chip or scratch" → "Chip or scratch".
+    static func displayName(forType type: String) -> String {
+        type.prefix(1).uppercased() + type.dropFirst()
+    }
 }
 
 // MARK: - Value types
