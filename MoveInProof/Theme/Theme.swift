@@ -41,7 +41,9 @@ extension Font {
     static let rowSubtitle = Font.subheadline
 }
 
-extension Color {
+// nonisolated: SwiftUI can resolve dynamic colours on its background render thread,
+// so this provider closure must not be main-actor isolated (that crashed the app).
+nonisolated extension Color {
     init(hex: UInt32) {
         self.init(uiColor: UIColor(hex: hex))
     }
@@ -49,11 +51,13 @@ extension Color {
     init(light: UInt32, dark: UInt32) {
         let lightColor = UIColor(hex: light)
         let darkColor = UIColor(hex: dark)
-        self.init(uiColor: UIColor { $0.userInterfaceStyle == .dark ? darkColor : lightColor })
+        self.init(uiColor: UIColor { @Sendable traits in
+            traits.userInterfaceStyle == .dark ? darkColor : lightColor
+        })
     }
 }
 
-extension UIColor {
+nonisolated extension UIColor {
     convenience init(hex: UInt32) {
         self.init(
             red: CGFloat((hex >> 16) & 0xFF) / 255,
