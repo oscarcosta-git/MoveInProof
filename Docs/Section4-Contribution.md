@@ -34,7 +34,7 @@ All commits are by Oscar Costa (student ID 25859366). Git author names **SlurpyD
 
 ## Governance
 
-- **Branching:** `main` (release), `develop` (integration) and feature branches (`feature/...`, `feat/...`, `fix/...`, `docs/...`). Work reached `main` only through GitHub pull requests (#1 to #6).
+- **Branching:** `main` (release), `develop` (integration) and feature branches (`feature/...`, `feat/...`, `fix/...`, `docs/...`). Work reached `main` only through GitHub pull requests.
 - **Commit style:** Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`) from the architecture work onward; earlier feature commits predate this.
 - **Quality gate before merging:** zero build warnings, all unit tests passing, and a manual check in the iOS Simulator.
 - **AI assistance:** declared in Section 5 and the README.
