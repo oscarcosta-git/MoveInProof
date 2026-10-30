@@ -6,7 +6,7 @@ enum SampleData {
     static let defaultRoomNames = ["Entry and hallway", "Living room", "Kitchen", "Bedroom 1", "Bathroom", "Bedroom 2", "Laundry", "Balcony"]
     static let captureLocations = ["North wall", "East wall", "South wall", "West wall", "Floor", "Ceiling"]
     static let captureTags = ["Scuff", "Crack", "Stain", "More"]
-    static let suggestionOptions = ["chip or scratch", "scuff", "crack", "stain", "dent", "wear and tear"]
+    static let damageTypes = ["chip or scratch", "scuff", "crack", "stain", "dent", "wear and tear", "damage"]
 
     /// Fills the store with the tenancy from the mockups.
     /// `withPhotoFiles` renders a placeholder image for each photo; previews skip it to stay fast.

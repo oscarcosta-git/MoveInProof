@@ -1,56 +1,6 @@
 import SwiftUI
 
-// Drawn stand-ins for real photos, so the UI can be built before the camera is wired up.
-
-/// A benchtop edge with a chip, as in the Issue and Compare mockups.
-struct BenchtopPhoto: View {
-    var flagExisting = false
-    var showNewDamage = false
-
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-            ZStack(alignment: .topLeading) {
-                LinearGradient(colors: [Color(hex: 0xCFCCC3), Color(hex: 0xD9D6CD)], startPoint: .top, endPoint: .bottom)
-                    .frame(height: h * 0.54)
-                LinearGradient(colors: [Color(hex: 0xEAE6DC), Color(hex: 0xDCD8CC)], startPoint: .top, endPoint: .bottom)
-                    .frame(height: h * 0.46)
-                    .offset(y: h * 0.54)
-                Rectangle()
-                    .fill(Color(hex: 0xB8B4AA))
-                    .frame(height: 2)
-                    .offset(y: h * 0.54)
-
-                Ellipse()
-                    .fill(Color(hex: 0x7F786D).opacity(0.85))
-                    .frame(width: w * 0.24, height: h * 0.08)
-                    .rotationEffect(.degrees(-6))
-                    .offset(x: w * 0.26, y: h * 0.5)
-
-                if flagExisting {
-                    DetectionBox(color: Theme.brand)
-                        .frame(width: w * 0.36, height: h * 0.28)
-                        .offset(x: w * 0.2, y: h * 0.42)
-                }
-
-                if showNewDamage {
-                    Capsule()
-                        .fill(Color(hex: 0x7F786D))
-                        .frame(width: w * 0.2, height: 5)
-                        .rotationEffect(.degrees(8))
-                        .offset(x: w * 0.69, y: h * 0.78)
-                    DetectionBox(color: Theme.danger)
-                        .frame(width: w * 0.3, height: h * 0.22)
-                        .offset(x: w * 0.64, y: h * 0.67)
-                }
-            }
-        }
-        .clipped()
-    }
-}
-
-/// A bedroom wall with a window and a scuff, as seen through the capture viewfinder.
+/// A drawn wall used as the viewfinder and saved photo where there's no camera (the Simulator).
 struct WallScene: View {
     var body: some View {
         GeometryReader { geo in
@@ -115,8 +65,5 @@ struct PhotoSwatch: View {
 }
 
 #Preview {
-    VStack {
-        BenchtopPhoto(flagExisting: true, showNewDamage: true).frame(height: 220)
-        WallScene().frame(height: 400)
-    }
+    WallScene().frame(height: 320)
 }

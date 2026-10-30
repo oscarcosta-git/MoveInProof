@@ -109,8 +109,7 @@ struct ConditionReportPDF {
         let textX = thumb == nil ? Layout.margin : Layout.margin + Layout.issueThumb.width + 12
         let textWidth = Layout.contentWidth - (textX - Layout.margin)
 
-        let type = issue.suggestion.prefix(1).uppercased() + issue.suggestion.dropFirst()
-        let kind = issue.isSuggestionConfirmed ? type : "\(type) (suggested)"
+        let kind = issue.typeName
         let detail = "\(issue.severity.rawValue) · \(kind) · \(issue.photos.count.counted("photo"))"
         let blocks: [(String, TextStyle, UIColor)] = [
             (issue.title, .bodyBold, Layout.primary),

@@ -67,7 +67,6 @@ struct FlagIssueUseCase {
 struct IssueDraft: Equatable {
     var title: String
     var kind: String
-    var isKindConfirmed: Bool
     var severity: Severity
     var notes: String
 }
@@ -81,7 +80,6 @@ struct UpdateIssueUseCase {
         guard !title.isEmpty else { throw .missingIssueTitle }
         issue.title = title
         issue.suggestion = draft.kind
-        issue.isSuggestionConfirmed = draft.isKindConfirmed
         issue.severity = draft.severity
         issue.notes = draft.notes.trimmingCharacters(in: .whitespacesAndNewlines)
         try withStorage { try repository.saveChanges() }

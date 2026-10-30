@@ -16,7 +16,6 @@ final class IssueDetailViewModel {
         draft = IssueDraft(
             title: issue.title,
             kind: issue.suggestion,
-            isKindConfirmed: issue.isSuggestionConfirmed,
             severity: issue.severity,
             notes: issue.notes
         )
@@ -25,13 +24,8 @@ final class IssueDetailViewModel {
     var photo: Photo? { issue.sortedPhotos.first }
     var subtitle: String { "\(issue.room?.name ?? "") · \(issue.photos.count.counted("photo"))" }
 
-    func confirmKind() {
-        draft.isKindConfirmed = true
-    }
-
     func changeKind(to kind: String) {
         draft.kind = kind
-        draft.isKindConfirmed = true
     }
 
     /// Returns false, with an error message, if the edits are invalid or couldn't be saved.
