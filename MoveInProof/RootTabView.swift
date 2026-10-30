@@ -1,4 +1,3 @@
-import SwiftData
 import SwiftUI
 
 enum AppTab: Hashable {
@@ -7,26 +6,36 @@ enum AppTab: Hashable {
 
 /// Shows setup until a tenancy exists, then the main tabs.
 struct RootView: View {
-    @Query private var tenancies: [Tenancy]
+    @State private var viewModel: RootViewModel
+    @Environment(AppDependencies.self) private var dependencies
+
+    init(viewModel: RootViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
 
     var body: some View {
-        if let tenancy = tenancies.first {
-            RootTabView(tenancy: tenancy)
-        } else {
-            SetupView()
+        Group {
+            if let tenancy = viewModel.tenancy {
+                RootTabView(tenancy: tenancy)
+                    .id(tenancy.id)
+            } else {
+                SetupView(viewModel: dependencies.setupViewModel())
+            }
         }
+        .task { viewModel.start() }
     }
 }
 
 struct RootTabView: View {
     var tenancy: Tenancy
 
+    @Environment(AppDependencies.self) private var dependencies
     @State private var selection: AppTab = .home
 
     var body: some View {
         TabView(selection: $selection) {
             Tab("Home", systemImage: "house", value: .home) {
-                NavigationStack { HomeView(tenancy: tenancy, selectedTab: $selection) }
+                NavigationStack { HomeView(viewModel: dependencies.homeViewModel(for: tenancy), selectedTab: $selection) }
             }
             Tab("Report", systemImage: "doc", value: .report) {
                 NavigationStack { ReportView(tenancy: tenancy) }
@@ -35,7 +44,7 @@ struct RootTabView: View {
                 NavigationStack { CompareView(tenancy: tenancy) }
             }
             Tab("Export", systemImage: "square.and.arrow.up", value: .export) {
-                NavigationStack { ExportView(tenancy: tenancy) }
+                NavigationStack { ExportView(viewModel: dependencies.exportViewModel(for: tenancy)) }
             }
         }
         .tint(Theme.brand)
@@ -44,5 +53,5 @@ struct RootTabView: View {
 
 #Preview {
     RootTabView(tenancy: AppStore.previewTenancy)
-        .modelContainer(AppStore.preview)
+        .environment(AppDependencies.preview)
 }

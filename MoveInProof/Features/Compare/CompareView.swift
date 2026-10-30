@@ -16,7 +16,7 @@ struct CompareView: View {
     }
 
     private var selectedRoom: Room? {
-        rooms.first { $0.persistentModelID == selectedRoomID } ?? rooms.first
+        rooms.first { $0.id == selectedRoomID } ?? rooms.first
     }
 
     var body: some View {
@@ -30,7 +30,7 @@ struct CompareView: View {
                         HStack(spacing: 10) {
                             ForEach(rooms) { candidate in
                                 FilterChip(title: candidate.name, isSelected: candidate == room) {
-                                    withAnimation { selectedRoomID = candidate.persistentModelID }
+                                    withAnimation { selectedRoomID = candidate.id }
                                 }
                             }
                         }
@@ -53,6 +53,7 @@ struct CompareView: View {
         }
         .background(Theme.background)
         .toolbar(.hidden, for: .navigationBar)
+        .statusBarBackground()
     }
 
     private func comparison(for room: Room) -> some View {
@@ -66,9 +67,9 @@ struct CompareView: View {
                 CompareColumn(title: "Move-out", date: tenancy.moveOutInspection.map { "Booked \($0.shortText)" } ?? "Not taken yet") {
                     VStack(spacing: 8) {
                         Image(systemName: "camera")
-                            .font(.system(size: 22, weight: .medium))
+                            .scaledFont(22, weight: .medium)
                         Text("Waiting for\nmove-out photos")
-                            .font(.system(size: 13, weight: .medium))
+                            .scaledFont(13, weight: .medium)
                             .multilineTextAlignment(.center)
                     }
                     .foregroundStyle(Theme.textSecondary)
@@ -112,7 +113,7 @@ struct CompareView: View {
             }
 
             Text("New damage and unchanged areas will show here once you take your move-out photos.")
-                .font(.system(size: 14))
+                .scaledFont(14)
                 .foregroundStyle(Theme.textSecondary)
         }
     }
@@ -149,10 +150,10 @@ private struct StatTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
-                .font(.system(size: 30, weight: .bold))
+                .scaledFont(30, weight: .bold)
                 .contentTransition(.numericText())
             Text(label)
-                .font(.system(size: 16, weight: .semibold))
+                .scaledFont(16, weight: .semibold)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
@@ -175,5 +176,4 @@ private extension CompareStatus {
 
 #Preview {
     NavigationStack { CompareView(tenancy: AppStore.previewTenancy) }
-        .modelContainer(AppStore.preview)
 }
