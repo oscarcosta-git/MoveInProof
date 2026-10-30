@@ -1,9 +1,9 @@
-import SwiftData
 import SwiftUI
 
 struct ReportView: View {
     var tenancy: Tenancy
 
+    @Environment(AppDependencies.self) private var dependencies
     @State private var capturingRoom: Room?
 
     var body: some View {
@@ -45,13 +45,13 @@ struct ReportView: View {
             }
         }
         .navigationDestination(for: Room.self) { room in
-            RoomDetailView(room: room)
+            RoomDetailView(viewModel: dependencies.roomDetailViewModel(for: room))
         }
         .navigationDestination(for: Issue.self) { issue in
-            IssueDetailView(issue: issue)
+            IssueDetailView(viewModel: dependencies.issueDetailViewModel(for: issue))
         }
         .fullScreenCover(item: $capturingRoom) { room in
-            CaptureView(room: room)
+            CaptureView(viewModel: dependencies.captureViewModel(for: room))
         }
     }
 }
@@ -139,5 +139,5 @@ struct StatusIndicator: View {
 
 #Preview {
     NavigationStack { ReportView(tenancy: AppStore.previewTenancy) }
-        .modelContainer(AppStore.preview)
+        .environment(AppDependencies.preview)
 }

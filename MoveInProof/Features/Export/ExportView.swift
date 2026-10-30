@@ -1,43 +1,21 @@
-import SwiftData
 import SwiftUI
 
 struct ExportView: View {
-    var tenancy: Tenancy
-
-    @State private var includePhotos = true
-    @State private var flaggedOnly = false
-    @State private var isGenerating = false
+    @State private var viewModel: ExportViewModel
     @State private var sharedFile: ExportedFile?
     @State private var fileToSave: URL?
-    @State private var exportError: String?
 
-    private var report: ConditionReportPDF {
-        ConditionReportPDF(tenancy: tenancy, includePhotos: includePhotos, flaggedOnly: flaggedOnly)
-    }
-
-    private var includedRooms: [Room] { report.rooms }
-
-    private var includedPhotoCount: Int {
-        includedRooms.reduce(0) { $0 + $1.photos.count }
-    }
-
-    private var summary: String {
-        // Estimated from the PDF layout: a cover page, then each room starts a page that fits
-        // about nine photos, at roughly 15 KB per photo once downsized.
-        let roomPages = includedRooms.reduce(0) { total, room in
-            total + (includePhotos ? max(1, (room.photos.count + 3 + 8) / 9) : 1)
-        }
-        let pages = 1 + roomPages
-        let bytes = Int64(10_000 * pages + (includePhotos ? 15_000 * includedPhotoCount : 0))
-        return "\(tenancy.streetAddress) · about \(pages.counted("page")) · \(bytes.formatted(.byteCount(style: .file)))"
+    init(viewModel: ExportViewModel) {
+        _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                ScreenHeader(title: "Export report", subtitle: summary)
+                ScreenHeader(title: "Export report", subtitle: viewModel.summary)
 
-                ReportPreview(tenancy: tenancy, room: includedRooms.first, includePhotos: includePhotos)
+                ReportPreview(tenancy: viewModel.tenancy, room: viewModel.includedRooms.first, includePhotos: viewModel.options.includePhotos)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 26)
                     .background(Theme.surfaceSunken, in: .rect(cornerRadius: 24))
@@ -45,22 +23,22 @@ struct ExportView: View {
                 DividedStack {
                     ToggleRow(
                         title: "Include photos",
-                        subtitle: "\(includedPhotoCount.counted("photo")) with date and time",
-                        isOn: $includePhotos
+                        subtitle: "\(viewModel.includedPhotoCount.counted("photo")) with date and time",
+                        isOn: $viewModel.options.includePhotos
                     )
                     ToggleRow(
                         title: "Flagged issues only",
                         subtitle: "Leave out rooms with no issues",
-                        isOn: $flaggedOnly
+                        isOn: $viewModel.options.flaggedOnly
                     )
                 }
                 .card()
 
                 VStack(spacing: 16) {
                     Button {
-                        Task { sharedFile = await generate().map(ExportedFile.init) }
+                        Task { sharedFile = await viewModel.generate().map(ExportedFile.init) }
                     } label: {
-                        if isGenerating {
+                        if viewModel.isGenerating {
                             ProgressView().tint(Theme.onBrand)
                         } else {
                             Label("Share PDF", systemImage: "square.and.arrow.up")
@@ -69,12 +47,12 @@ struct ExportView: View {
                     .buttonStyle(.primary)
 
                     Button("Save to Files") {
-                        Task { fileToSave = await generate() }
+                        Task { fileToSave = await viewModel.generate() }
                     }
                     .buttonStyle(.secondary)
                 }
-                .disabled(includedRooms.isEmpty || isGenerating)
-                .opacity(includedRooms.isEmpty ? 0.5 : 1)
+                .disabled(!viewModel.canExport)
+                .opacity(viewModel.includedRooms.isEmpty ? 0.5 : 1)
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -88,26 +66,9 @@ struct ExportView: View {
                 .presentationDetents([.medium, .large])
         }
         .fileMover(isPresented: Binding(get: { fileToSave != nil }, set: { if !$0 { fileToSave = nil } }), file: fileToSave) { result in
-            if case .failure(let error) = result { exportError = error.localizedDescription }
+            if case .failure(let error) = result { viewModel.errorMessage = error.localizedDescription }
         }
-        .alert("Couldn't create the report", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
-            Button("OK") { exportError = nil }
-        } message: {
-            Text(exportError ?? "")
-        }
-    }
-
-    private func generate() async -> URL? {
-        isGenerating = true
-        defer { isGenerating = false }
-        // Let the button show its spinner before the main thread is busy drawing.
-        await Task.yield()
-        do {
-            return try report.write()
-        } catch {
-            exportError = error.localizedDescription
-            return nil
-        }
+        .errorAlert($viewModel.errorMessage)
     }
 }
 
@@ -213,6 +174,5 @@ private struct ReportPreview: View {
 }
 
 #Preview {
-    NavigationStack { ExportView(tenancy: AppStore.previewTenancy) }
-        .modelContainer(AppStore.preview)
+    NavigationStack { ExportView(viewModel: AppDependencies.preview.exportViewModel(for: AppStore.previewTenancy)) }
 }

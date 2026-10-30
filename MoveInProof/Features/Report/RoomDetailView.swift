@@ -1,20 +1,26 @@
-import SwiftData
 import SwiftUI
 
 /// A single room's photos and flagged issues. Not in the mockups; bridges the report list to the issue screen.
 struct RoomDetailView: View {
-    @Bindable var room: Room
+    @State private var viewModel: RoomDetailViewModel
 
-    @Environment(\.modelContext) private var context
+    @Environment(AppDependencies.self) private var dependencies
     @State private var isCapturing = false
     @State private var viewingPhoto: Photo?
 
     private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
 
+    init(viewModel: RoomDetailViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
+
+    private var room: Room { viewModel.room }
+
     var body: some View {
+        @Bindable var viewModel = viewModel
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                ScreenHeader(title: room.name, subtitle: subtitle)
+                ScreenHeader(title: room.name, subtitle: viewModel.subtitle)
 
                 if !room.issues.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
@@ -61,10 +67,10 @@ struct RoomDetailView: View {
                                 .buttonStyle(.plain)
                                 .contextMenu {
                                     if photo.issue == nil {
-                                        Button("Flag as issue", systemImage: "exclamationmark.circle") { flagIssue(for: photo) }
+                                        Button("Flag as issue", systemImage: "exclamationmark.circle") { viewModel.flag(photo) }
                                     }
                                     Button("Delete photo", systemImage: "trash", role: .destructive) {
-                                        PhotoStore.delete(photo, in: context)
+                                        viewModel.delete(photo)
                                     }
                                 }
                             }
@@ -82,9 +88,9 @@ struct RoomDetailView: View {
             ToolbarItem(placement: .principal) { EmptyView() }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(room.isComplete ? "Reopen" : "Mark done") {
-                    withAnimation { room.isComplete.toggle() }
+                    withAnimation { viewModel.toggleComplete() }
                 }
-                .disabled(!room.isComplete && room.photos.isEmpty)
+                .disabled(!viewModel.canToggleComplete)
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -99,24 +105,12 @@ struct RoomDetailView: View {
             .background(Theme.background)
         }
         .fullScreenCover(isPresented: $isCapturing) {
-            CaptureView(room: room)
+            CaptureView(viewModel: dependencies.captureViewModel(for: room))
         }
+        .errorAlert($viewModel.errorMessage)
         .sheet(item: $viewingPhoto) { photo in
             PhotoViewer(photo: photo)
         }
-    }
-
-    private var subtitle: String {
-        if room.photos.isEmpty { return "Not started" }
-        let summary = "\(room.photos.count.counted("photo")) · \(room.issues.count.counted("issue"))"
-        return room.isComplete ? summary : "In progress · \(summary)"
-    }
-
-    private func flagIssue(for photo: Photo) {
-        let issue = Issue(title: "Issue on \(photo.location.lowercased())", suggestion: "damage", createdAt: photo.capturedAt)
-        context.insert(issue)
-        issue.room = room
-        photo.issue = issue
     }
 }
 
@@ -174,6 +168,6 @@ private struct PhotoViewer: View {
 }
 
 #Preview {
-    NavigationStack { RoomDetailView(room: AppStore.previewTenancy.sortedRooms[2]) }
-        .modelContainer(AppStore.preview)
+    NavigationStack { RoomDetailView(viewModel: AppDependencies.preview.roomDetailViewModel(for: AppStore.previewTenancy.sortedRooms[2])) }
+        .environment(AppDependencies.preview)
 }

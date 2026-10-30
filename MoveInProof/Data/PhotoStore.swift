@@ -1,4 +1,3 @@
-import SwiftData
 import SwiftUI
 import UIKit
 
@@ -27,10 +26,8 @@ enum PhotoStore {
         UIImage(contentsOfFile: url(for: fileName).path(percentEncoded: false))
     }
 
-    /// Deletes the record and its file.
-    static func delete(_ photo: Photo, in context: ModelContext) {
-        try? FileManager.default.removeItem(at: url(for: photo.fileName))
-        context.delete(photo)
+    static func deleteFile(named fileName: String) {
+        try? FileManager.default.removeItem(at: url(for: fileName))
     }
 
     static func deleteAllFiles() {

@@ -1,15 +1,24 @@
-import SwiftData
 import SwiftUI
 
 struct HomeView: View {
-    @Bindable var tenancy: Tenancy
+    @State private var viewModel: HomeViewModel
     @Binding var selectedTab: AppTab
+
+    @Environment(AppDependencies.self) private var dependencies
 
     @State private var capturingRoom: Room?
     @State private var isPickingInspectionDate = false
     @State private var isShowingSettings = false
 
+    init(viewModel: HomeViewModel, selectedTab: Binding<AppTab>) {
+        _viewModel = State(initialValue: viewModel)
+        _selectedTab = selectedTab
+    }
+
+    private var tenancy: Tenancy { viewModel.tenancy }
+
     var body: some View {
+        @Bindable var viewModel = viewModel
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack(alignment: .center) {
@@ -35,8 +44,8 @@ struct HomeView: View {
                     total: tenancy.rooms.count,
                     photos: tenancy.photoCount,
                     issues: tenancy.issueCount,
-                    nextRoomName: tenancy.nextRoom?.name,
-                    onContinue: { capturingRoom = tenancy.nextRoom },
+                    nextRoomName: viewModel.nextRoom?.name,
+                    onContinue: { capturingRoom = viewModel.nextRoom },
                     onExport: { selectedTab = .export }
                 )
             }
@@ -47,14 +56,15 @@ struct HomeView: View {
         .background(Theme.background)
         .toolbar(.hidden, for: .navigationBar)
         .fullScreenCover(item: $capturingRoom) { room in
-            CaptureView(room: room)
+            CaptureView(viewModel: dependencies.captureViewModel(for: room))
         }
         .sheet(isPresented: $isPickingInspectionDate) {
-            InspectionDateSheet(date: $tenancy.moveOutInspection)
+            InspectionDateSheet(date: tenancy.moveOutInspection, onSave: viewModel.setMoveOutInspection)
         }
         .sheet(isPresented: $isShowingSettings) {
-            TenancySettingsView(tenancy: tenancy)
+            TenancySettingsView(viewModel: dependencies.settingsViewModel(for: tenancy))
         }
+        .errorAlert($viewModel.errorMessage)
     }
 
     private var keyDates: some View {
@@ -76,7 +86,7 @@ struct HomeView: View {
                 .background(Theme.brandTint, in: .capsule)
             }
             KeyDateRow(title: "Lease ends", subtitle: tenancy.leaseEnd.longText) {
-                Pill(text: max(tenancy.leaseEnd.daysFromToday, 0).counted("day"), tone: .neutral)
+                Pill(text: viewModel.leaseDaysLeft.counted("day"), tone: .neutral)
             }
         }
         .card()
@@ -214,7 +224,8 @@ private struct MoveInProgressCard: View {
 }
 
 private struct InspectionDateSheet: View {
-    @Binding var date: Date?
+    var date: Date?
+    var onSave: (Date?) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var draft = Date()
 
@@ -231,14 +242,14 @@ private struct InspectionDateSheet: View {
                     if date != nil {
                         ToolbarItem(placement: .destructiveAction) {
                             Button("Remove", role: .destructive) {
-                                date = nil
+                                onSave(nil)
                                 dismiss()
                             }
                         }
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") {
-                            date = draft
+                            onSave(draft)
                             dismiss()
                         }
                     }
@@ -250,6 +261,8 @@ private struct InspectionDateSheet: View {
 }
 
 #Preview {
-    NavigationStack { HomeView(tenancy: AppStore.previewTenancy, selectedTab: .constant(.home)) }
-        .modelContainer(AppStore.preview)
+    NavigationStack {
+        HomeView(viewModel: AppDependencies.preview.homeViewModel(for: AppStore.previewTenancy), selectedTab: .constant(.home))
+    }
+    .environment(AppDependencies.preview)
 }

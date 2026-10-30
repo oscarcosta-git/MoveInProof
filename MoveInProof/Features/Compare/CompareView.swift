@@ -16,7 +16,7 @@ struct CompareView: View {
     }
 
     private var selectedRoom: Room? {
-        rooms.first { $0.persistentModelID == selectedRoomID } ?? rooms.first
+        rooms.first { $0.id == selectedRoomID } ?? rooms.first
     }
 
     var body: some View {
@@ -30,7 +30,7 @@ struct CompareView: View {
                         HStack(spacing: 10) {
                             ForEach(rooms) { candidate in
                                 FilterChip(title: candidate.name, isSelected: candidate == room) {
-                                    withAnimation { selectedRoomID = candidate.persistentModelID }
+                                    withAnimation { selectedRoomID = candidate.id }
                                 }
                             }
                         }
@@ -175,5 +175,4 @@ private extension CompareStatus {
 
 #Preview {
     NavigationStack { CompareView(tenancy: AppStore.previewTenancy) }
-        .modelContainer(AppStore.preview)
 }

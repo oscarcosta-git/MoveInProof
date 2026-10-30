@@ -48,6 +48,15 @@ struct CardModifier: ViewModifier {
 }
 
 extension View {
+    /// Shows a ViewModel's error message as an alert, and clears it when dismissed.
+    func errorAlert(_ message: Binding<String?>) -> some View {
+        alert(
+            message.wrappedValue ?? "",
+            isPresented: Binding(get: { message.wrappedValue != nil }, set: { if !$0 { message.wrappedValue = nil } }),
+            actions: { Button("OK") { message.wrappedValue = nil } }
+        )
+    }
+
     func card(padding: CGFloat = 0) -> some View {
         modifier(CardModifier(padding: padding))
     }
