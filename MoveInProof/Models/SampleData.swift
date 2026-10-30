@@ -61,8 +61,11 @@ enum SampleData {
         issue.severity = severity
         issue.notes = notes
         issue.room = room
-        for photo in room.sortedPhotos.filter({ $0.issue == nil }).prefix(photos) {
+        let issuePhotos = room.sortedPhotos.filter { $0.issue == nil }.prefix(photos)
+        for photo in issuePhotos {
             photo.issue = issue
         }
+        // Date the issue by its own first photo so issues keep the order they were found in.
+        issue.createdAt = issuePhotos.first?.capturedAt ?? issue.createdAt
     }
 }
