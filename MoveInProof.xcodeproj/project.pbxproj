@@ -44,15 +44,31 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				MoveInProofWidgets.entitlements,
 			);
 			target = 4D1A00000000000000000106 /* MoveInProofWidgetsExtension */;
+		};
+		4D1A00000000000000000202 /* Exceptions for "MoveInProof" folder in "MoveInProof" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				MoveInProof.entitlements,
+			);
+			target = 4D1A00000000000000000006 /* MoveInProof */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4D1A00000000000000000002 /* MoveInProof */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4D1A00000000000000000202 /* Exceptions for "MoveInProof" folder in "MoveInProof" target */,
+			);
 			path = MoveInProof;
+			sourceTree = "<group>";
+		};
+		4D1A00000000000000000201 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		4D1A00000000000000000105 /* MoveInProofWidgets */ = {
@@ -88,6 +104,7 @@
 			children = (
 				4D1A00000000000000000002 /* MoveInProof */,
 				4D1A00000000000000000105 /* MoveInProofWidgets */,
+				4D1A00000000000000000201 /* Shared */,
 				4D1A00000000000000000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -118,6 +135,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				4D1A00000000000000000105 /* MoveInProofWidgets */,
+				4D1A00000000000000000201 /* Shared */,
 			);
 			name = MoveInProofWidgetsExtension;
 			packageProductDependencies = (
@@ -142,6 +160,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				4D1A00000000000000000002 /* MoveInProof */,
+				4D1A00000000000000000201 /* Shared */,
 			);
 			name = MoveInProof;
 			packageProductDependencies = (
@@ -234,6 +253,7 @@
 		4D1A0000000000000000010C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MoveInProofWidgets/MoveInProofWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -258,6 +278,7 @@
 		4D1A0000000000000000010D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MoveInProofWidgets/MoveInProofWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -332,6 +353,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MoveInProof/MoveInProof.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
@@ -362,6 +384,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MoveInProof/MoveInProof.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
